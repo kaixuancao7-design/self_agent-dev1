@@ -1,0 +1,120 @@
+2026-04-01 14:00:25,265 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:00:25,265 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好，扫地机器人尘盒一般多久清理一次？请简短回答。
+2026-04-01 14:00:25,265 - agent_logger - INFO - [tool monitor]执行工具：<unknown>
+2026-04-01 14:01:18,928 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:01:18,928 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好，扫地机器人尘盒一般多久清理一次？请简短回答。
+2026-04-01 14:02:00,468 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:02:00,470 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好，扫地机器人尘盒一般多久清理一次？请简短回答。
+2026-04-01 14:02:02,391 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-01 14:02:02,391 - agent_logger - INFO - [tool monitor]：输入参数：{'query': '扫地机器人尘盒清理频率'}
+2026-04-01 14:02:05,167 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-01 14:02:05,170 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-01 14:02:05,170 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：普通家庭建议每2-3天清理一次尘盒，宠物家庭或大户型建议每天清理；每次清扫完成后应及时倾倒尘盒垃圾，避免满溢、滋生细菌或产生异味。
+2026-04-01 14:02:50,775 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:02:50,775 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好，扫地机器人在我所在地区的气温下尘盒一般多久清理一次？请简短回答。
+2026-04-01 14:02:53,384 - agent_logger - INFO - [tool monitor]：执行工具 get_user_location
+2026-04-01 14:02:53,384 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-01 14:02:53,387 - agent_logger - INFO - [tool monitor]：工具 get_user_location 执行完成
+2026-04-01 14:02:53,394 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-01 14:02:53,395 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：用户位于广州市天河区。
+2026-04-01 14:02:56,304 - agent_logger - INFO - [tool monitor]：执行工具 get_weather
+2026-04-01 14:02:56,305 - agent_logger - INFO - [tool monitor]：输入参数：{'city': '广州'}
+2026-04-01 14:02:56,306 - agent_logger - INFO - [tool monitor]：工具 get_weather 执行完成
+2026-04-01 14:02:56,307 - agent_logger - INFO - [log before model]：即将调用模型，带有5轮历史对话
+2026-04-01 14:02:56,307 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：广州的天气是晴天，温度25度，湿度60%，风速10公里每小时。
+2026-04-01 14:04:33,873 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:04:33,873 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：给我生成我的使用报告
+2026-04-01 14:04:36,054 - agent_logger - INFO - [tool monitor]：执行工具 get_user_id
+2026-04-01 14:04:36,054 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-01 14:04:36,054 - agent_logger - INFO - [tool monitor]：工具 get_user_id 执行完成
+2026-04-01 14:04:36,058 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-01 14:04:36,058 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：USER_005
+2026-04-01 14:04:38,520 - agent_logger - INFO - [tool monitor]：执行工具 get_current_month
+2026-04-01 14:04:38,520 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-01 14:04:38,522 - agent_logger - INFO - [tool monitor]：工具 get_current_month 执行完成
+2026-04-01 14:04:38,523 - agent_logger - INFO - [log before model]：即将调用模型，带有5轮历史对话
+2026-04-01 14:04:38,523 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：当前月份是2025年6月。
+2026-04-01 14:04:41,377 - agent_logger - INFO - [tool monitor]：执行工具 fill_context_report
+2026-04-01 14:04:41,377 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-01 14:04:41,378 - agent_logger - INFO - [tool monitor]：工具 fill_context_report 执行完成
+2026-04-01 14:04:41,380 - agent_logger - INFO - [log before model]：即将调用模型，带有7轮历史对话
+2026-04-01 14:04:41,380 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：fill_context_report工具函数被调用，提示词切换事件已报告。
+2026-04-01 14:04:41,380 - agent_logger - INFO - [report prompt switch]：检测到生成报告的标记，正在切换提示词
+2026-04-01 14:04:43,854 - agent_logger - INFO - [tool monitor]：执行工具 fetch_external_data
+2026-04-01 14:04:43,854 - agent_logger - INFO - [tool monitor]：输入参数：{'user_id': 'USER_005', 'month': '2025-06'}
+2026-04-01 14:04:43,854 - agent_logger - INFO - [tool monitor]：工具 fetch_external_data 执行完成
+2026-04-01 14:04:43,858 - agent_logger - INFO - [log before model]：即将调用模型，带有9轮历史对话
+2026-04-01 14:04:43,858 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：Error: fetch_external_data is not a valid tool, try one of [rag_summarize, get_weather, get_user_location, get_user_id, get_current_month, generate_exaction_data, fill_context_report, get_user_history].
+2026-04-01 14:04:43,858 - agent_logger - INFO - [report prompt switch]：检测到生成报告的标记，正在切换提示词
+2026-04-01 14:04:47,394 - agent_logger - INFO - [tool monitor]：执行工具 get_user_history
+2026-04-01 14:04:47,394 - agent_logger - INFO - [tool monitor]：输入参数：{'user_id': 'USER_005', 'month': '2025-06'}
+2026-04-01 14:04:47,400 - agent_logger - WARNING - [获取用户历史交互记录]没有找到用户USER_005在2025-06的交互记录
+2026-04-01 14:04:47,400 - agent_logger - INFO - [tool monitor]：工具 get_user_history 执行完成
+2026-04-01 14:04:47,401 - agent_logger - INFO - [log before model]：即将调用模型，带有11轮历史对话
+2026-04-01 14:04:47,402 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：没有找到用户USER_005在2025-06的交互记录
+2026-04-01 14:04:47,403 - agent_logger - INFO - [report prompt switch]：检测到生成报告的标记，正在切换提示词
+2026-04-01 14:04:51,506 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-01 14:04:51,506 - agent_logger - INFO - [tool monitor]：输入参数：{'query': '扫地机器人日常使用最佳实践和维护保养建议'}
+2026-04-01 14:04:56,737 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-01 14:04:56,739 - agent_logger - INFO - [log before model]：即将调用模型，带有13轮历史对话
+2026-04-01 14:04:56,739 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：日常使用后及时清理尘盒、主刷、边刷及拖布，用干软布擦拭机身外壳和防撞条缝隙；每日检查边刷是否卡顿，每周清理轮组泥沙、检查充电座状态，并对宠物家庭每周除味消毒、缩短耗材更换周期；每月清洁扫拖一体机型的拖地模组接口；使用后调至待机模式，若沾到污物立即用湿巾和中性洗涤剂清理；在地毯或水泥地等特殊环境需针对性维护，如检查主刷复位、减少拖地频次。
+2026-04-01 14:04:56,739 - agent_logger - INFO - [report prompt switch]：检测到生成报告的标记，正在切换提示词
+2026-04-01 14:04:59,558 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-01 14:04:59,558 - agent_logger - INFO - [tool monitor]：输入参数：{'query': '扫地机器人清洁效率评估标准和耗材更换周期'}
+2026-04-01 14:05:07,154 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-01 14:05:07,154 - agent_logger - INFO - [log before model]：即将调用模型，带有15轮历史对话
+2026-04-01 14:05:07,154 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：清洁效率评估标准包括：在短毛地毯环境使用地毯增压功能后检查主刷是否复位，水泥地或老旧地砖清扫后及时清理机身底部和轮组泥沙，宠物家庭每次清扫后全面清理主刷、尘盒和拖布，并每周除味消毒。耗材更换周期方面，边刷磨损至刷毛长度小于1cm时需立即更换；宠物家庭耗材更换周期缩短50%；尘盒每次清扫后应清空，集尘座出风口每周清理以保证吸力正常。
+2026-04-01 14:05:07,157 - agent_logger - INFO - [report prompt switch]：检测到生成报告的标记，正在切换提示词
+2026-04-01 14:20:27,925 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:20:27,926 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好
+2026-04-01 14:22:00,807 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:22:00,807 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：在我城市天气下，扫地机器人如何保养
+2026-04-01 14:22:04,565 - agent_logger - INFO - [tool monitor]：执行工具 get_user_location
+2026-04-01 14:22:04,565 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-01 14:22:04,565 - agent_logger - INFO - [tool monitor]：工具 get_user_location 执行完成
+2026-04-01 14:22:04,565 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-01 14:22:04,568 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：用户位于广州市天河区。
+2026-04-01 14:22:08,678 - agent_logger - INFO - [tool monitor]：执行工具 get_weather
+2026-04-01 14:22:08,678 - agent_logger - INFO - [tool monitor]：输入参数：{'city': '广州'}
+2026-04-01 14:22:08,680 - agent_logger - INFO - [tool monitor]：工具 get_weather 执行完成
+2026-04-01 14:22:08,681 - agent_logger - INFO - [log before model]：即将调用模型，带有5轮历史对话
+2026-04-01 14:22:08,681 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：广州的天气是晴天，温度25度，湿度60%，风速10公里每小时。
+2026-04-01 14:22:13,964 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-01 14:22:13,964 - agent_logger - INFO - [tool monitor]：输入参数：{'query': '中等湿度环境下扫地机器人保养方法'}
+2026-04-01 14:22:18,101 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-01 14:22:18,102 - agent_logger - INFO - [log before model]：即将调用模型，带有7轮历史对话
+2026-04-01 14:22:18,102 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：在中等湿度环境下，扫地机器人使用后应及时用干软布擦拭机身外壳，去除灰尘和水渍；每次清扫完成后清理防撞条缝隙的毛发和线头；每日检查边刷旋转是否卡顿，如有异常立即停机清理；每周检查充电座电源适配器是否发热或异响；若为扫拖一体机型，每月需检查拖地模组接口是否清洁、连接顺畅。
+2026-04-01 14:24:20,375 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:24:20,377 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：在我所在城市天气情况下，扫地机器人如何保养
+2026-04-01 14:24:22,577 - agent_logger - INFO - [tool monitor]：执行工具 get_user_location
+2026-04-01 14:24:22,577 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-01 14:24:22,578 - agent_logger - INFO - [tool monitor]：工具 get_user_location 执行完成
+2026-04-01 14:24:22,578 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-01 14:24:22,578 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：用户位于上海市浦东新区。
+2026-04-01 14:24:27,223 - agent_logger - INFO - [tool monitor]：执行工具 get_weather
+2026-04-01 14:24:27,223 - agent_logger - INFO - [tool monitor]：输入参数：{'city': '上海'}
+2026-04-01 14:24:27,223 - agent_logger - INFO - [tool monitor]：工具 get_weather 执行完成
+2026-04-01 14:24:27,225 - agent_logger - INFO - [log before model]：即将调用模型，带有5轮历史对话
+2026-04-01 14:24:27,225 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：上海的天气是晴天，温度25度，湿度60%，风速10公里每小时。
+2026-04-01 14:24:30,558 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-01 14:24:30,558 - agent_logger - INFO - [tool monitor]：输入参数：{'query': '扫地机器人在湿度60%环境下如何保养'}
+2026-04-01 14:24:32,793 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-01 14:24:32,795 - agent_logger - INFO - [log before model]：即将调用模型，带有7轮历史对话
+2026-04-01 14:24:32,795 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：在湿度60%的潮湿环境下，应减少拖地频次，使用干拖模式；机器人机身和耗材每日晾干；每周对机器人进行除湿处理。
+2026-04-01 14:26:39,003 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 14:26:39,003 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：在我所在城市天气情况下，扫地机器人如何保养
+2026-04-01 14:26:41,009 - agent_logger - INFO - [tool monitor]：执行工具 get_user_location
+2026-04-01 14:26:41,010 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-01 14:26:41,011 - agent_logger - INFO - [tool monitor]：工具 get_user_location 执行完成
+2026-04-01 14:26:41,030 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-01 14:26:41,031 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：用户位于广州市天河区。
+2026-04-01 14:26:43,462 - agent_logger - INFO - [tool monitor]：执行工具 get_weather
+2026-04-01 14:26:43,462 - agent_logger - INFO - [tool monitor]：输入参数：{'city': '广州'}
+2026-04-01 14:26:43,462 - agent_logger - INFO - [tool monitor]：工具 get_weather 执行完成
+2026-04-01 14:26:43,518 - agent_logger - INFO - [log before model]：即将调用模型，带有5轮历史对话
+2026-04-01 14:26:43,519 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：广州的天气是晴天，温度25度，湿度60%，风速10公里每小时。
+2026-04-01 14:26:46,492 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-01 14:26:46,493 - agent_logger - INFO - [tool monitor]：输入参数：{'query': '高湿度环境下扫地机器人保养方法'}
+2026-04-01 14:26:50,549 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-01 14:26:50,725 - agent_logger - INFO - [log before model]：即将调用模型，带有7轮历史对话
+2026-04-01 14:26:50,725 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：高湿度环境下，扫地机器人使用后应立即用干软布擦拭机身外壳和底部，去除水渍，防止污渍硬化或积水残留；避免在卫生间等有积水区域拖地，仅进行扫地作业；每次使用后及时清理尘盒、主刷及拖布，保持部件干燥，以防霉变或堵塞。

@@ -1,0 +1,8 @@
+2026-04-01 13:27:58,773 - agent_logger - INFO - [log before model]：即将调用模型，带有0轮历史对话
+2026-04-01 13:31:31,667 - agent_logger - INFO - [log before model]：即将调用模型，带有0轮历史对话
+2026-04-01 13:39:43,694 - agent_logger - INFO - [tool monitor]执行工具：<unknown>
+2026-04-01 13:39:43,694 - agent_logger - INFO - [tool monitor]传入参数：None
+2026-04-01 13:44:07,816 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 13:44:07,816 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好，扫地机器人尘盒一般多久清理一次？请简短回答。
+2026-04-01 13:54:16,538 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-01 13:54:16,538 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好，扫地机器人尘盒一般多久清理一次？请简短回答。
