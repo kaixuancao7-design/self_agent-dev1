@@ -1,0 +1,13 @@
+2026-04-14 18:41:55,708 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qianwen3-vl:8b @ http://localhost:11434
+2026-04-14 18:52:31,719 - agent_logger - INFO - [加载知识库文件]正在加载文件D:\vcodeproject\self_agent-dev1\data\AI Agent热点文章周报_26_4_8-_4_14.docx，请稍候...
+2026-04-14 18:52:31,720 - agent_logger - ERROR - [加载知识库文件]加载文件D:\vcodeproject\self_agent-dev1\data\AI Agent热点文章周报_26_4_8-_4_14.docx时发生错误：ImportError('unstructured package not found, please install it with `pip install unstructured`'),exc_info=True
+2026-04-14 18:52:31,721 - agent_logger - INFO - [加载知识库文件]文件D:\vcodeproject\self_agent-dev1\data\扫地机器人100问.pdf已经被加载过，跳过
+2026-04-14 18:52:31,722 - agent_logger - INFO - [加载知识库文件]文件D:\vcodeproject\self_agent-dev1\data\扫地机器人100问2.txt已经被加载过，跳过
+2026-04-14 18:52:31,722 - agent_logger - INFO - [加载知识库文件]文件D:\vcodeproject\self_agent-dev1\data\扫拖一体机器人100问.txt已经被加载过，跳过
+2026-04-14 18:52:31,723 - agent_logger - INFO - [加载知识库文件]文件D:\vcodeproject\self_agent-dev1\data\故障排除.txt已经被加载过，跳过
+2026-04-14 18:52:31,724 - agent_logger - INFO - [加载知识库文件]文件D:\vcodeproject\self_agent-dev1\data\维护保养.txt已经被加载过，跳过
+2026-04-14 18:52:31,724 - agent_logger - INFO - [加载知识库文件]文件D:\vcodeproject\self_agent-dev1\data\选购指南.txt已经被加载过，跳过
+2026-04-14 18:54:45,132 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qianwen3-vl:8b @ http://localhost:11434
+2026-04-14 18:58:16,276 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qianwen3-vl:8b @ http://localhost:11434
+2026-04-14 18:58:59,618 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qianwen3-vl:8b @ http://localhost:11434
+2026-04-14 19:02:05,620 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qianwen3-vl:8b @ http://localhost:11434

@@ -1,0 +1,4 @@
+{"timestamp": "2026-04-14 20:09:26", "event": "session_start", "session_id": "session_20260414_200926_c4abd1bb"}
+{"timestamp": "2026-04-14 20:09:26", "event": "query_received", "payload": {"query": "我想问一下aiagent最近相关热点", "model_source": "ollama"}}
+{"timestamp": "2026-04-14 20:09:26", "event": "observe", "payload": {"query": "我想问一下aiagent最近相关热点", "context": {"report": false, "session_id": "session_20260414_200926_c4abd1bb"}}}
+{"timestamp": "2026-04-14 20:09:26", "event": "think", "payload": {"note": "开始模型执行"}}
