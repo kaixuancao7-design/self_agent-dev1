@@ -10,7 +10,9 @@ Agent 工具模块
 """
 
 from .core_tools import rag_summarize
-from .utility_tools import get_weather, get_user_location, get_user_id, get_current_month
+from .utility_tools import get_weather, get_user_location, get_user_id, get_current_month, \
+    get_knowledge_base_stats, list_databases, create_database, delete_database, \
+    switch_database, list_uploaded_files, remove_file_from_knowledge_base, reparse_file_in_knowledge_base
 from .report_tools import get_user_history, fill_context_report
 from .advanced_tools import task_decompose, evaluate_result, fact_check
 from .search_tools import web_search, fetch_webpage
@@ -21,6 +23,14 @@ __all__ = [
     "get_user_location",
     "get_user_id",
     "get_current_month",
+    "get_knowledge_base_stats",
+    "list_databases",
+    "create_database",
+    "delete_database",
+    "switch_database",
+    "list_uploaded_files",
+    "remove_file_from_knowledge_base",
+    "reparse_file_in_knowledge_base",
     "get_user_history",
     "fill_context_report",
     "task_decompose",

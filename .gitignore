@@ -45,4 +45,4 @@ config/local.yml
 config/.env
 
 # Testing
-test_*.py
+test/

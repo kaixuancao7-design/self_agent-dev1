@@ -16,10 +16,17 @@ class VectorStoreService:
         self.persist_base_dir = get_abs_path(chroma_cfg['persist_directory'])
         self.default_db_name = chroma_cfg.get('default_database_name', 'default')
         self.current_db = VectorStoreService._sanitize_db_name(db_name) if db_name else self._select_initial_database()
+        
+        # 清理分隔符配置，移除空字符串以防止切分产生空chunk
+        separators = chroma_cfg['separators']
+        if "" in separators:
+            separators = [s for s in separators if s != ""]
+            logger.warning(f"[配置检查] 移除了分隔符列表中的空字符串")
+        
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=chroma_cfg['chunk_size'], 
             chunk_overlap=chroma_cfg['chunk_overlap'],
-            separators=chroma_cfg['separators'],
+            separators=separators,
             length_function=len
             )
         self._init_store()
@@ -154,6 +161,8 @@ class VectorStoreService:
                 if not documents:
                     continue
                 split_documents = self.splitter.split_documents(documents)
+                # 过滤空的或过短的chunk
+                split_documents = self._filter_empty_chunks(split_documents)
                 if not split_documents:
                     continue
                 self.vectors_store.add_documents(split_documents)
@@ -219,6 +228,24 @@ class VectorStoreService:
         根据文件类型调用不同的加载器加载文件内容，返回Document对象列表
         """
         return load_file_content(file_path)
+    
+    def _filter_empty_chunks(self, documents: list) -> list:
+        """
+        过滤空的或过短的文档chunk
+        :param documents: Document对象列表
+        :return: 过滤后的Document对象列表
+        """
+        filtered = []
+        min_length = 10  # 最小长度阈值
+        
+        for doc in documents:
+            content = doc.page_content.strip() if doc.page_content else ""
+            if len(content) >= min_length:
+                filtered.append(doc)
+            else:
+                logger.warning(f"[Chunk过滤] 跳过空或过短的chunk (长度: {len(content)})")
+        
+        return filtered
 
     def load_document(self):
         """
@@ -241,8 +268,10 @@ class VectorStoreService:
                     logger.warning(f"[加载知识库文件]文件{path}没有加载到内容，跳过")
                     continue
                 split_documents = self.splitter.split_documents(documents)
+                # 过滤空的或过短的chunk
+                split_documents = self._filter_empty_chunks(split_documents)
                 if not split_documents:
-                    logger.warning(f"[加载知识库文件]文件{path}没有分割出内容，跳过")
+                    logger.warning(f"[加载知识库文件]文件{path}没有分割出有效内容，跳过")
                     continue
                 self.vectors_store.add_documents(split_documents)
                 self.save_md5_hex(md5_hex)
@@ -272,8 +301,10 @@ class VectorStoreService:
                 return {"success": False, "message": f"无法读取文件 {file_name} 的内容"}
             
             split_documents = self.splitter.split_documents(documents)
+            # 过滤空的或过短的chunk
+            split_documents = self._filter_empty_chunks(split_documents)
             if not split_documents:
-                return {"success": False, "message": f"文件 {file_name} 分割后没有内容"}
+                return {"success": False, "message": f"文件 {file_name} 分割后没有有效内容"}
             
             self.vectors_store.add_documents(split_documents)
             self.save_md5_hex(md5_hex)
