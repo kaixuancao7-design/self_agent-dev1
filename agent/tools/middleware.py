@@ -42,7 +42,11 @@ def log_before_model(
 
 @dynamic_prompt#在模型调用的中间件函数中动态修改提示词，根据runtime.context中的标记判断是否需要切换提示词
 def report_prompt_switch(request: ToolCallRequest):#动态切换提示词
-    is_report = request.runtime.context.get("report", False)
+    if request.runtime.context is not None:
+        is_report = request.runtime.context.get("report", False)
+    else:
+        is_report = False
+    
     if is_report:#是报告生成的场景，切换到报告提示词
         logger.info(f"[report prompt switch]：检测到生成报告的标记，正在切换提示词")
         return load_report_prompt()

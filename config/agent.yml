@@ -1,6 +1,6 @@
 external_data_path: data\external\records.csv
 model_source: ollama  # 可选值：cloud / ollama
-ollama_model_name: qianwen3-vl:8b
+ollama_model_name: qwen3.5:9b 
 ollama_base_url: http://localhost:11434
 retry_max_attempts: 3
 retry_backoff_seconds: 2

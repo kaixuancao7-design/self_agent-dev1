@@ -1,0 +1,8 @@
+{"timestamp": "2026-04-15 19:09:28", "event": "session_start", "session_id": "session_20260415_190928_3a02dab3"}
+{"timestamp": "2026-04-15 19:09:28", "event": "query_received", "payload": {"query": "AI Agent最近热点", "tool_count": 8, "model_source": "ollama"}}
+{"timestamp": "2026-04-15 19:09:28", "event": "observe", "payload": {"iteration": 1, "messages": [{"role": "user", "content": "AI Agent最近热点"}], "context": {"report": false, "session_id": "session_20260415_190928_3a02dab3"}}}
+{"timestamp": "2026-04-15 19:09:28", "event": "think", "payload": {"iteration": 1, "note": "开始模型执行"}}
+{"timestamp": "2026-04-15 19:09:28", "event": "retry", "payload": {"attempt": 1, "error": "", "max_attempts": 3, "yielded_any": false}}
+{"timestamp": "2026-04-15 19:09:30", "event": "retry", "payload": {"attempt": 2, "error": "", "max_attempts": 3, "yielded_any": false}}
+{"timestamp": "2026-04-15 19:09:34", "event": "retry", "payload": {"attempt": 3, "error": "", "max_attempts": 3, "yielded_any": false}}
+{"timestamp": "2026-04-15 19:09:34", "event": "fatal_error", "payload": {"attempt": 3, "error": "", "yielded_any": false}}

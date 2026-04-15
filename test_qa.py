@@ -23,9 +23,12 @@ def test_qa():
     try:
         for chunk in agent.execute_stream(query):
             response += chunk
-            print(chunk, end="", flush=True)
+            try:
+                print(chunk, end="", flush=True)
+            except UnicodeEncodeError:
+                print(chunk.encode('utf-8', errors='replace').decode('gbk', errors='replace'), end="", flush=True)
         print("\n" + "="*50)
-        print(f"Full response: {repr(response)}")
+        print(f"Full response length: {len(response)}")
     except Exception as e:
         logger.error(f"Error during test: {e}")
         print(f"Error: {e}")

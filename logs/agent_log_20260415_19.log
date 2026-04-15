@@ -1,0 +1,470 @@
+2026-04-15 19:08:19,586 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qianwen3-vl:8b @ http://localhost:11434
+2026-04-15 19:08:20,604 - agent_logger - WARNING - Vision model detected, disabling tools to prevent streaming errors
+2026-04-15 19:08:20,612 - agent_logger - INFO - Agent created with 0 tools
+2026-04-15 19:08:20,612 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:08:20,619 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:08:20,620 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:08:24,835 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 1 次重试，错误：Ollama call failed with status code 404. Maybe your model is not found and you should pull the model with `ollama pull qianwen3-vl:8b`.
+2026-04-15 19:08:26,838 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:08:26,838 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:08:30,932 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 2 次重试，错误：Ollama call failed with status code 404. Maybe your model is not found and you should pull the model with `ollama pull qianwen3-vl:8b`.
+2026-04-15 19:08:34,936 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:08:34,936 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:08:39,036 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 3 次重试，错误：Ollama call failed with status code 404. Maybe your model is not found and you should pull the model with `ollama pull qianwen3-vl:8b`.
+2026-04-15 19:08:39,037 - __main__ - ERROR - Error during test: Ollama call failed with status code 404. Maybe your model is not found and you should pull the model with `ollama pull qianwen3-vl:8b`.
+2026-04-15 19:09:27,420 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:09:28,408 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:09:28,408 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:09:28,416 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:09:28,416 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:09:28,417 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 1 次重试，错误：
+2026-04-15 19:09:30,423 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:09:30,423 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:09:30,424 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 2 次重试，错误：
+2026-04-15 19:09:34,428 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:09:34,428 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:09:34,429 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 3 次重试，错误：
+2026-04-15 19:09:34,431 - __main__ - ERROR - Error during test: 
+2026-04-15 19:10:32,175 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:10:33,047 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:10:33,047 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:10:33,054 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:10:33,054 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:10:33,062 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 1 次重试，错误：NotImplementedError: 
+2026-04-15 19:10:33,062 - agent_logger - ERROR - [ReactAgent] 错误堆栈：
+Traceback (most recent call last):
+  File "d:\vcodeproject\self_agent-dev1\agent\react_agent.py", line 69, in _stream_with_retries
+    for chunk in self.agent.stream({"messages": messages}, config={"configurable": context}, stream_mode="messages"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\main.py", line 2725, in stream
+    for _ in runner.tick(
+             ^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_runner.py", line 258, in tick
+    _panic_or_proceed(
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_runner.py", line 520, in _panic_or_proceed
+    raise exc
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_executor.py", line 80, in done
+    task.result()
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_retry.py", line 96, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1304, in model_node
+    result = wrap_model_call_handler(request, _execute_model_sync)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 265, in normalized_single
+    return _to_composed_result(single_handler(request, handler))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langsmith\run_helpers.py", line 760, in wrapper
+    function_result = run_container["context"].run(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\middleware\types.py", line 1703, in wrapped
+    return handler(request)
+           ^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1268, in _execute_model_sync
+    model_, effective_response_format = _get_bound_model(request)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1253, in _get_bound_model
+    request.model.bind_tools(
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1602, in bind_tools
+    raise NotImplementedError
+NotImplementedError
+During task with name 'model' and id 'caa85bba-0a9c-63a6-91dd-37346e77dbef'
+
+2026-04-15 19:10:35,065 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:10:35,065 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:10:35,068 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 2 次重试，错误：NotImplementedError: 
+2026-04-15 19:10:35,069 - agent_logger - ERROR - [ReactAgent] 错误堆栈：
+Traceback (most recent call last):
+  File "d:\vcodeproject\self_agent-dev1\agent\react_agent.py", line 69, in _stream_with_retries
+    for chunk in self.agent.stream({"messages": messages}, config={"configurable": context}, stream_mode="messages"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\main.py", line 2725, in stream
+    for _ in runner.tick(
+             ^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_runner.py", line 258, in tick
+    _panic_or_proceed(
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_runner.py", line 520, in _panic_or_proceed
+    raise exc
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_executor.py", line 80, in done
+    task.result()
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_retry.py", line 96, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1304, in model_node
+    result = wrap_model_call_handler(request, _execute_model_sync)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 265, in normalized_single
+    return _to_composed_result(single_handler(request, handler))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langsmith\run_helpers.py", line 760, in wrapper
+    function_result = run_container["context"].run(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\middleware\types.py", line 1703, in wrapped
+    return handler(request)
+           ^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1268, in _execute_model_sync
+    model_, effective_response_format = _get_bound_model(request)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1253, in _get_bound_model
+    request.model.bind_tools(
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1602, in bind_tools
+    raise NotImplementedError
+NotImplementedError
+During task with name 'model' and id '0654fe66-6fcb-71b4-b484-4d6595da50c5'
+
+2026-04-15 19:10:39,075 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:10:39,075 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:10:39,079 - agent_logger - ERROR - [ReactAgent] 模型流式调用失败，第 3 次重试，错误：NotImplementedError: 
+2026-04-15 19:10:39,080 - agent_logger - ERROR - [ReactAgent] 错误堆栈：
+Traceback (most recent call last):
+  File "d:\vcodeproject\self_agent-dev1\agent\react_agent.py", line 69, in _stream_with_retries
+    for chunk in self.agent.stream({"messages": messages}, config={"configurable": context}, stream_mode="messages"):
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\main.py", line 2725, in stream
+    for _ in runner.tick(
+             ^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_runner.py", line 258, in tick
+    _panic_or_proceed(
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_runner.py", line 520, in _panic_or_proceed
+    raise exc
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_executor.py", line 80, in done
+    task.result()
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\_base.py", line 449, in result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\_base.py", line 401, in __get_result
+    raise self._exception
+  File "D:\anaconda3\envs\agent\Lib\concurrent\futures\thread.py", line 59, in run
+    result = self.fn(*self.args, **self.kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\pregel\_retry.py", line 96, in run_with_retry
+    return task.proc.invoke(task.input, config)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\_internal\_runnable.py", line 656, in invoke
+    input = context.run(step.invoke, input, config, **kwargs)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langgraph\_internal\_runnable.py", line 400, in invoke
+    ret = self.func(*args, **kwargs)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1304, in model_node
+    result = wrap_model_call_handler(request, _execute_model_sync)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 265, in normalized_single
+    return _to_composed_result(single_handler(request, handler))
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langsmith\run_helpers.py", line 760, in wrapper
+    function_result = run_container["context"].run(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\middleware\types.py", line 1703, in wrapped
+    return handler(request)
+           ^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1268, in _execute_model_sync
+    model_, effective_response_format = _get_bound_model(request)
+                                        ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain\agents\factory.py", line 1253, in _get_bound_model
+    request.model.bind_tools(
+  File "D:\anaconda3\envs\agent\Lib\site-packages\langchain_core\language_models\chat_models.py", line 1602, in bind_tools
+    raise NotImplementedError
+NotImplementedError
+During task with name 'model' and id '68b35d47-d1f2-ed60-e427-b75fae5e67ff'
+
+2026-04-15 19:10:39,081 - __main__ - ERROR - Error during test: 
+2026-04-15 19:11:22,078 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:11:23,024 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:11:23,024 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:11:23,031 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:11:23,031 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:11:51,693 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:11:51,693 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent最近热点'}
+2026-04-15 19:25:56,879 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:25:58,357 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:25:58,358 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:25:58,375 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:25:58,376 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:26:13,645 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:26:13,646 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent 最近热点 发展趋势'}
+2026-04-15 19:29:55,203 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:30:47,824 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:31:40,845 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:32:49,111 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:32:50,122 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:33:17,174 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:34:09,679 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:34:20,714 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:34:21,721 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:34:21,721 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:34:21,726 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:34:21,727 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:34:33,448 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:34:33,448 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent最近热点趋势技术发展'}
+2026-04-15 19:34:33,839 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:34:33,840 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:34:33,840 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：核心观点：摩根大通《2026年新兴技术趋势年度洞察报告》指出，AI正从被动响应的大模型向具备自主行动、协同决策能力的智能体演进，催生了上下文驱动架构、AI基础设施爆发、意图交互范式革新、模拟增强测试四大核心趋势。
+
+二、技术与产品动态
+
+7. Anthropic正式公测Claude Managed Agents
+
+发布日期：2026-04-08｜来源：海通国际证券研报
+参考资料3：核心观点：专家指出，2026年是AI智能体规模化落地的临界点，背后有四重条件同时成熟：基础模型能力突破推理门槛（如DeepSeek-R1）、工具生态基础设施成熟（MCP和A2A协议）、企业AI治理体系逐步建立、推理成本两年下降超95%。但“爆发”不等于“成熟”，企业级Agent的成熟应用将集中在2026—2028年，真正的原生应用生态还需3—5年。
+2026-04-15 19:36:10,255 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:36:11,209 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:36:11,213 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:36:11,214 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：测试一下
+2026-04-15 19:37:07,854 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:37:09,205 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:37:09,205 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:37:09,211 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:37:09,212 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:37:19,953 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:37:19,954 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent最近热点'}
+2026-04-15 19:37:20,354 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:37:20,354 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:37:20,354 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：AI Agent热点文章周报（2026年4月8日—4月14日）
+
+一、行业趋势与市场
+
+1. 2026：智能体爆发年
+
+发布日期：2026-04-02｜来源：《环球》杂志
+参考资料3：3. 微软高管：AI Agent规模化部署或增加软件收入
+
+发布日期：2026-04-13｜来源：东方财富网
+
+核心观点：微软高管Rajesh Jha表示，未来企业部署大量AI Agent时，这些智能体可能需要拥有自己的用户身份并支付软件许可费用。AI不仅不会减少软件收入，反而可能增加软件收入。
+
+4. 2026行业级智能体TOP100
+
+发布日期：2026-04-13｜来源：德本咨询
+2026-04-15 19:38:05,461 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:38:06,378 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:38:06,381 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:38:06,382 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:38:18,501 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:38:18,501 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent 热点'}
+2026-04-15 19:38:18,908 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:38:18,908 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:38:18,908 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：AI Agent热点文章周报（2026年4月8日—4月14日）
+
+一、行业趋势与市场
+
+1. 2026：智能体爆发年
+
+发布日期：2026-04-02｜来源：《环球》杂志
+参考资料3：9. 国内首个学术AI Agent“研伴Respal”上线
+
+发布日期：2026-04-13｜来源：太平洋科技
+
+核心观点：“研伴Respal”是国内首个面向学术场景的AI Agent平台，覆盖文献综述、数据分析、论文排版等90个科研技能，内置2.2亿英文文献+7000万中文文献库。新用户注册送300万Token。
+
+10. Omdia：AI智能体功能将是2026年TOP手机厂商软件部署重点
+2026-04-15 19:38:58,829 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:38:59,808 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:38:59,811 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:38:59,811 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:39:15,309 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:39:15,310 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent最近热点趋势应用'}
+2026-04-15 19:39:15,696 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:39:15,697 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:39:15,697 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：核心观点：白皮书介绍了GUI Agent的概念、技术实现路径、主要应用场景和发展瓶颈，系统总结了产品形态和场景落地路径。
+
+三、开源生态
+
+12. Hermes Agent：两个月狂揽4.7万星的自进化AI
+
+发布日期：2026-04-11｜来源：极客公园
+参考资料3：AI Agent热点文章周报（2026年4月8日—4月14日）
+
+一、行业趋势与市场
+
+1. 2026：智能体爆发年
+
+发布日期：2026-04-02｜来源：《环球》杂志
+2026-04-15 19:40:22,061 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:40:22,994 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:40:22,995 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:40:23,001 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:40:23,002 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:40:40,103 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:40:40,103 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent 最新热点趋势 技术突破 应用领域'}
+2026-04-15 19:40:40,509 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:40:40,511 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:40:40,511 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：核心观点：专家指出，2026年是AI智能体规模化落地的临界点，背后有四重条件同时成熟：基础模型能力突破推理门槛（如DeepSeek-R1）、工具生态基础设施成熟（MCP和A2A协议）、企业AI治理体系逐步建立、推理成本两年下降超95%。但“爆发”不等于“成熟”，企业级Agent的成熟应用将集中在2026—2028年，真正的原生应用生态还需3—5年。
+参考资料3：3. 微软高管：AI Agent规模化部署或增加软件收入
+
+发布日期：2026-04-13｜来源：东方财富网
+
+核心观点：微软高管Rajesh Jha表示，未来企业部署大量AI Agent时，这些智能体可能需要拥有自己的用户身份并支付软件许可费用。AI不仅不会减少软件收入，反而可能增加软件收入。
+
+4. 2026行业级智能体TOP100
+
+发布日期：2026-04-13｜来源：德本咨询
+2026-04-15 19:41:34,556 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:41:35,501 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:41:35,506 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:41:35,506 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:41:55,940 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:41:55,941 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent 最近热点 趋势 发展动态'}
+2026-04-15 19:41:56,370 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:41:56,372 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:41:56,373 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：AI Agent热点文章周报（2026年4月8日—4月14日）
+
+一、行业趋势与市场
+
+1. 2026：智能体爆发年
+
+发布日期：2026-04-02｜来源：《环球》杂志
+参考资料3：3. 微软高管：AI Agent规模化部署或增加软件收入
+
+发布日期：2026-04-13｜来源：东方财富网
+
+核心观点：微软高管Rajesh Jha表示，未来企业部署大量AI Agent时，这些智能体可能需要拥有自己的用户身份并支付软件许可费用。AI不仅不会减少软件收入，反而可能增加软件收入。
+
+4. 2026行业级智能体TOP100
+
+发布日期：2026-04-13｜来源：德本咨询
+2026-04-15 19:42:37,000 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:42:37,934 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:42:37,939 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:42:37,939 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:42:54,882 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:42:54,882 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent最近热点趋势技术动态'}
+2026-04-15 19:42:55,318 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:43:29,217 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:43:30,375 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:43:30,375 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:43:30,382 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:43:30,382 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:43:40,566 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:43:40,567 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent最近热点 最新趋势 应用领域 技术突破'}
+2026-04-15 19:43:40,994 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:43:40,995 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:43:40,995 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：核心观点：摩根大通《2026年新兴技术趋势年度洞察报告》指出，AI正从被动响应的大模型向具备自主行动、协同决策能力的智能体演进，催生了上下文驱动架构、AI基础设施爆发、意图交互范式革新、模拟增强测试四大核心趋势。
+
+二、技术与产品动态
+
+7. Anthropic正式公测Claude Managed Agents
+
+发布日期：2026-04-08｜来源：海通国际证券研报
+参考资料3：AI Agent热点文章周报（2026年4月8日—4月14日）
+
+一、行业趋势与市场
+
+1. 2026：智能体爆发年
+
+发布日期：2026-04-02｜来源：《环球》杂志
+2026-04-15 19:44:10,675 - __main__ - ERROR - Error during test: 'gbk' codec can't encode character '\U0001f50d' in position 0: illegal multibyte sequence
+2026-04-15 19:44:35,322 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:44:36,285 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:44:36,285 - __main__ - INFO - Testing query: AI Agent最近热点
+2026-04-15 19:44:36,289 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:44:36,289 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：AI Agent最近热点
+2026-04-15 19:44:53,120 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:44:53,120 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent最近热点'}
+2026-04-15 19:44:53,519 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:44:53,520 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:44:53,520 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：AI Agent热点文章周报（2026年4月8日—4月14日）
+
+一、行业趋势与市场
+
+1. 2026：智能体爆发年
+
+发布日期：2026-04-02｜来源：《环球》杂志
+参考资料3：3. 微软高管：AI Agent规模化部署或增加软件收入
+
+发布日期：2026-04-13｜来源：东方财富网
+
+核心观点：微软高管Rajesh Jha表示，未来企业部署大量AI Agent时，这些智能体可能需要拥有自己的用户身份并支付软件许可费用。AI不仅不会减少软件收入，反而可能增加软件收入。
+
+4. 2026行业级智能体TOP100
+
+发布日期：2026-04-13｜来源：德本咨询
+2026-04-15 19:45:31,786 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:45:32,711 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:45:32,716 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:45:32,717 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好
+2026-04-15 19:46:08,823 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:46:09,761 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:46:09,767 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:46:09,767 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好
+2026-04-15 19:47:01,706 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:47:07,108 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:47:12,584 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:47:12,584 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好
+2026-04-15 19:49:02,338 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:49:03,375 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:49:03,380 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:49:03,380 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：测试
+2026-04-15 19:49:19,764 - agent_logger - INFO - [tool monitor]：执行工具 fill_context_for_report
+2026-04-15 19:49:19,765 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-15 19:49:19,765 - agent_logger - INFO - [tool monitor]：工具 fill_context_for_report 执行完成
+2026-04-15 19:49:19,766 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:49:19,766 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：Error: fill_context_for_report is not a valid tool, try one of [rag_summarize, get_weather, get_user_location, get_user_id, get_current_month, generate_exaction_data, fill_context_report, get_user_history].
+2026-04-15 19:49:26,996 - agent_logger - INFO - [tool monitor]：执行工具 get_user_id
+2026-04-15 19:49:26,997 - agent_logger - INFO - [tool monitor]：输入参数：{}
+2026-04-15 19:49:26,998 - agent_logger - INFO - [tool monitor]：工具 get_user_id 执行完成
+2026-04-15 19:49:27,000 - agent_logger - INFO - [log before model]：即将调用模型，带有5轮历史对话
+2026-04-15 19:49:27,000 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：USER_003
+2026-04-15 19:50:13,277 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 19:50:13,750 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 19:50:19,438 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:50:19,438 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：你好
+2026-04-15 19:50:41,705 - agent_logger - INFO - [log before model]：即将调用模型，带有1轮历史对话
+2026-04-15 19:50:41,705 - agent_logger - DEBUG - [log before model]：HumanMessage|历史对话内容：最近的aiagent的相关消息
+2026-04-15 19:50:51,256 - agent_logger - INFO - [tool monitor]：执行工具 rag_summarize
+2026-04-15 19:50:51,257 - agent_logger - INFO - [tool monitor]：输入参数：{'query': 'AI Agent 最近的消息 动态 发展'}
+2026-04-15 19:50:52,093 - agent_logger - INFO - [tool monitor]：工具 rag_summarize 执行完成
+2026-04-15 19:50:52,094 - agent_logger - INFO - [log before model]：即将调用模型，带有3轮历史对话
+2026-04-15 19:50:52,094 - agent_logger - DEBUG - [log before model]：ToolMessage|历史对话内容：参考资料1：整理说明：以上为2026年4月8日至4月14日期间关于AI Agent的热点文章，涵盖行业趋势、技术产品、开源生态、学术研究、政策战略和行业应用六大主题，共23篇文章。如需进一步了解某篇文章的详细内容或补充更多维度，请告知。
+参考资料2：AI Agent热点文章周报（2026年4月8日—4月14日）
+
+一、行业趋势与市场
+
+1. 2026：智能体爆发年
+
+发布日期：2026-04-02｜来源：《环球》杂志
+参考资料3：3. 微软高管：AI Agent规模化部署或增加软件收入
+
+发布日期：2026-04-13｜来源：东方财富网
+
+核心观点：微软高管Rajesh Jha表示，未来企业部署大量AI Agent时，这些智能体可能需要拥有自己的用户身份并支付软件许可费用。AI不仅不会减少软件收入，反而可能增加软件收入。
+
+4. 2026行业级智能体TOP100
+
+发布日期：2026-04-13｜来源：德本咨询

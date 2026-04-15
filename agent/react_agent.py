@@ -73,9 +73,13 @@ class ReactAgent:
                     yield chunk
                 return
             except Exception as exc:
+                import traceback
+                error_details = f"{type(exc).__name__}: {exc}"
+                error_trace = traceback.format_exc()
                 logger.error(
-                    f"[ReactAgent] 模型流式调用失败，第 {attempt} 次重试，错误：{exc}"
+                    f"[ReactAgent] 模型流式调用失败，第 {attempt} 次重试，错误：{error_details}"
                 )
+                logger.error(f"[ReactAgent] 错误堆栈：\n{error_trace}")
                 self.session.log(
                     "retry",
                     {
@@ -99,73 +103,37 @@ class ReactAgent:
         self._make_session(query)
         messages = [{"role": "user", "content": query}]
         context = {"report": False, "session_id": self.session.session_id}
-        iteration = 0
 
-        while True:
-            iteration += 1
-            self.session.log("observe", {"iteration": iteration, "messages": messages, "context": context})
-            self.session.log("think", {"iteration": iteration, "note": "开始模型执行"})
+        self.session.log("observe", {"messages": messages, "context": context})
 
-            last_output = ""
-            last_yielded = ""
-            tool_calls = []
-
-            for chunk in self._stream_with_retries(messages, context):
-                if not isinstance(chunk, dict):
-                    continue
+        last_yielded = ""
+        for chunk in self._stream_with_retries(messages, context):
+            # langgraph agent.stream() 返回的是 (message, context) tuple
+            if isinstance(chunk, (list, tuple)) and len(chunk) >= 1:
+                latest_message = chunk[0]
+            elif isinstance(chunk, dict):
                 messages_in_chunk = chunk.get("messages")
                 if not messages_in_chunk:
                     continue
-
                 latest_message = messages_in_chunk[-1]
-                if latest_message.content is not None:
-                    content = latest_message.content.strip()
-                    if content != last_yielded:
-                        if content.startswith(last_yielded):
-                            delta = content[len(last_yielded) :]
-                        else:
-                            delta = content
-                        last_yielded = content
-                        self.session.log("stream_chunk", {"iteration": iteration, "chunk": delta})
-                        yield delta
-                    last_output = content
-
-                tool_calls = getattr(latest_message, "tool_calls", []) or []
-
-            self.session.log(
-                "result",
-                {
-                    "iteration": iteration,
-                    "output": last_output,
-                    "tool_calls": [tc.get("name") for tc in tool_calls],
-                },
-            )
-
-            messages.append({"role": "assistant", "content": last_output})
-
-            if tool_calls and iteration < max_iterations:
-                self.session.log(
-                    "reflect",
-                    {
-                        "iteration": iteration,
-                        "action": "continue",
-                        "reason": "tool_calls_detected",
-                        "tools": [tc.get("name") for tc in tool_calls],
-                    },
-                )
+            else:
                 continue
 
-            stop_reason = "no_tool_calls" if not tool_calls else "max_iterations_reached"
-            self.session.log(
-                "reflect",
-                {
-                    "iteration": iteration,
-                    "action": "stop",
-                    "reason": stop_reason,
-                    "tool_calls": [tc.get("name") for tc in tool_calls],
-                },
-            )
-            break
+            # 跳过 ToolMessage（工具返回结果，不需要输出）
+            from langchain_core.messages import ToolMessage
+            if isinstance(latest_message, ToolMessage):
+                continue
+
+            if hasattr(latest_message, "content") and latest_message.content is not None:
+                content = latest_message.content.strip()
+                if content != last_yielded:
+                    if content.startswith(last_yielded):
+                        delta = content[len(last_yielded) :]
+                    else:
+                        delta = content
+                    last_yielded = content
+                    self.session.log("stream_chunk", {"chunk": delta})
+                    yield delta
 
     def stream_to_text(self, query: str, max_iterations: int = 3) -> str:
         return "".join(self.execute_stream(query, max_iterations=max_iterations))

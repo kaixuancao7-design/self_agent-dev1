@@ -1,0 +1,31 @@
+{"timestamp": "2026-04-15 19:43:30", "event": "session_start", "session_id": "session_20260415_194330_287eb507"}
+{"timestamp": "2026-04-15 19:43:30", "event": "query_received", "payload": {"query": "AI Agent最近热点", "tool_count": 8, "model_source": "ollama"}}
+{"timestamp": "2026-04-15 19:43:30", "event": "observe", "payload": {"messages": [{"role": "user", "content": "AI Agent最近热点"}], "context": {"report": false, "session_id": "session_20260415_194330_287eb507"}}}
+{"timestamp": "2026-04-15 19:43:48", "event": "stream_chunk", "payload": {"chunk": "根据"}}
+{"timestamp": "2026-04-15 19:43:48", "event": "stream_chunk", "payload": {"chunk": "最新"}}
+{"timestamp": "2026-04-15 19:43:48", "event": "stream_chunk", "payload": {"chunk": "检索"}}
+{"timestamp": "2026-04-15 19:43:48", "event": "stream_chunk", "payload": {"chunk": "到的"}}
+{"timestamp": "2026-04-15 19:43:48", "event": "stream_chunk", "payload": {"chunk": "资料"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "，"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "以下是"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "关于"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "AI"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "Agent"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "（"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "人工智能"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "智能"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "体"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "）"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "在"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "2"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "0"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "2"}}
+{"timestamp": "2026-04-15 19:43:49", "event": "stream_chunk", "payload": {"chunk": "6"}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "年"}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "4"}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "月的"}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "热点"}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "动态"}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "："}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "###"}}
+{"timestamp": "2026-04-15 19:43:50", "event": "stream_chunk", "payload": {"chunk": "🔍"}}

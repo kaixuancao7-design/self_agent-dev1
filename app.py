@@ -49,7 +49,8 @@ def show_chat_page():
             
             st.chat_message("assistant").write_stream(capture(res_stream,response_messages))
 
-            st.session_state["message"].append({"role":"assistant","content":response_messages[-1]})
+            full_response = "".join(response_messages)
+            st.session_state["message"].append({"role":"assistant","content":full_response})
             st.rerun()
 
 
@@ -81,6 +82,8 @@ def show_upload_page():
         st.session_state["reparse_file_name"] = None
     if "reparse_message" not in st.session_state:
         st.session_state["reparse_message"] = ""
+    if "upload_key" not in st.session_state:
+        st.session_state["upload_key"] = 0
 
     db_list = VectorStoreService.list_databases()
     current_db = st.session_state["vector_store"].current_db
@@ -130,13 +133,15 @@ def show_upload_page():
             type=[t[1:] for t in SUPPORTED_FILE_TYPES],
             accept_multiple_files=True,
             help="支持拖拽上传多个文件",
-            label_visibility="collapsed"
+            label_visibility="collapsed",
+            key=f"file_uploader_{st.session_state['upload_key']}"
         )
 
         if uploaded_files:
             total_files = len(uploaded_files)
             progress_bar = st.progress(0)
             status_text = st.empty()
+            has_changes = False
 
             for i, uploaded_file in enumerate(uploaded_files, 1):
                 status_text.text(f"正在处理文件 {i}/{total_files}: {uploaded_file.name}")
@@ -149,6 +154,7 @@ def show_upload_page():
                     result = st.session_state["vector_store"].upload_file(temp_file_path, uploaded_file.name)
                     
                     if result["success"]:
+                        has_changes = True
                         st.success(f"✅ {result['message']}")
                         with st.expander(f"查看详情"):
                             st.write(f"📄 切分的Chunks数量: {result['chunks']}")
@@ -161,7 +167,9 @@ def show_upload_page():
                 progress_bar.progress(i / total_files)
             
             status_text.text("上传完成！")
-            st.rerun()
+            if has_changes:
+                st.session_state["upload_key"] += 1
+                st.rerun()
 
     with tab2:
         st.subheader("已上传文件列表")
@@ -188,32 +196,54 @@ def show_upload_page():
                             st.rerun()
             st.divider()
 
-        for idx, file_info in enumerate(uploaded_files, 1):
+        if uploaded_files:
+            for idx, file_info in enumerate(uploaded_files, 1):
                 md5 = file_info.get("md5") if isinstance(file_info, dict) else str(file_info)
                 file_name = file_info.get("file_name", md5) if isinstance(file_info, dict) else md5
                 chunks = file_info.get("chunks", "未知") if isinstance(file_info, dict) else "未知"
                 uploaded_at = file_info.get("uploaded_at", "") if isinstance(file_info, dict) else ""
                 short_md5 = f"{md5[:8]}..."
+                is_deleting = st.session_state["delete_confirm"] and st.session_state["delete_target"] == md5
 
-                with st.expander(f"{idx}. {file_name}"):
+                with st.expander(f"{idx}. {file_name}", expanded=is_deleting):
                     st.markdown(
                         f"- **文件名**：{file_name}\n- **MD5**：`{short_md5}`\n- **Chunks**：{chunks}"
                         + (f"\n- **上传时间**：{uploaded_at}" if uploaded_at else "")
                     )
-                    col1, col2 = st.columns([3, 1])
-                    with col1:
-                        if st.button("🪄 重新解析", key=f"reparse_{md5}"):
-                            st.session_state["reparse_target"] = md5
-                            st.session_state["reparse_file_name"] = file_name
-                            st.session_state["delete_confirm"] = False
-                            st.session_state["reparse_message"] = ""
-                            st.rerun()
-                    with col2:
-                        if st.button("🗑️ 删除", key=f"delete_{md5}"):
-                            st.session_state["delete_target"] = md5
-                            st.session_state["delete_confirm"] = True
-                            st.session_state["reparse_target"] = None
-                            st.rerun()
+                    
+                    if is_deleting:
+                        st.warning("⚠️ 确认删除此文件？此操作不可撤销！")
+                        del_col1, del_col2 = st.columns(2)
+                        with del_col1:
+                            if st.button("确认删除", key=f"confirm_delete_{md5}"):
+                                result = st.session_state["vector_store"].remove_file(md5)
+                                if result["success"]:
+                                    st.success(result["message"])
+                                else:
+                                    st.error(result["message"])
+                                st.session_state["delete_confirm"] = False
+                                st.session_state["delete_target"] = None
+                                st.rerun()
+                        with del_col2:
+                            if st.button("取消", key=f"cancel_delete_{md5}"):
+                                st.session_state["delete_confirm"] = False
+                                st.session_state["delete_target"] = None
+                    else:
+                        col1, col2 = st.columns([3, 1])
+                        with col1:
+                            if st.button("🪄 重新解析", key=f"reparse_{md5}"):
+                                st.session_state["reparse_target"] = md5
+                                st.session_state["reparse_file_name"] = file_name
+                                st.session_state["delete_confirm"] = False
+                                st.session_state["reparse_message"] = ""
+                                st.rerun()
+                        with col2:
+                            if st.button("🗑️ 删除", key=f"delete_{md5}"):
+                                st.session_state["delete_target"] = md5
+                                st.session_state["delete_confirm"] = True
+                                st.session_state["reparse_target"] = None
+        elif stats.get("total_chunks", 0) > 0:
+            st.warning("⚠️ 数据库中存在向量数据，但文件元数据信息丢失")
         else:
             st.info("暂无已上传的文件")
 
@@ -259,24 +289,6 @@ def show_upload_page():
                 st.session_state["reparse_message"] = ""
                 st.rerun()
 
-        if st.session_state["delete_confirm"]:
-            st.warning("⚠️ 确认删除此文件？此操作不可撤销！")
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("确认删除", key="confirm_delete"):
-                    result = st.session_state["vector_store"].remove_file(st.session_state["delete_target"])
-                    if result["success"]:
-                        st.success(result["message"])
-                    else:
-                        st.error(result["message"])
-                    st.session_state["delete_confirm"] = False
-                    st.session_state["delete_target"] = None
-                    st.rerun()
-            with col2:
-                if st.button("取消", key="cancel_delete"):
-                    st.session_state["delete_confirm"] = False
-                    st.session_state["delete_target"] = None
-                    st.rerun()
     with tab3:
         st.subheader("数据库管理")
         

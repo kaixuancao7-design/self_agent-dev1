@@ -279,6 +279,12 @@ class VectorStoreService:
             self.save_md5_hex(md5_hex)
             self.save_file_metadata(md5_hex, file_name, len(split_documents))
             
+            data_dir = os.path.join(get_abs_path(chroma_cfg['data_path']), self.current_db)
+            os.makedirs(data_dir, exist_ok=True)
+            dest_file_path = os.path.join(data_dir, file_name)
+            shutil.copy2(file_path, dest_file_path)
+            logger.info(f"[上传文件]文件已保存到本地数据目录: {dest_file_path}")
+            
             logger.info(f"[上传文件]成功上传文件 {file_name}")
             return {
                 "success": True, 
@@ -329,13 +335,22 @@ class VectorStoreService:
                         f.write(line)
 
             metadata = self.load_file_metadata()
+            file_name = None
             if md5_to_remove in metadata:
+                file_name = metadata[md5_to_remove].get('file_name')
                 metadata.pop(md5_to_remove, None)
                 try:
                     with open(self.get_metadata_path(), 'w', encoding='utf-8') as f:
                         json.dump(metadata, f, ensure_ascii=False, indent=2)
                 except Exception as exc:
                     logger.error(f"[删除文件]更新元数据失败：{exc}")
+
+            if file_name:
+                data_dir = os.path.join(get_abs_path(chroma_cfg['data_path']), self.current_db)
+                local_file_path = os.path.join(data_dir, file_name)
+                if os.path.exists(local_file_path):
+                    os.remove(local_file_path)
+                    logger.info(f"[删除文件]已删除本地数据目录中的文件: {local_file_path}")
 
             logger.info(f"[删除文件]成功删除MD5: {md5_to_remove}")
             return {"success": True, "message": "文件删除成功"}
@@ -373,11 +388,15 @@ class VectorStoreService:
         """
         try:
             persist_dir = os.path.join(self.persist_base_dir, self.current_db)
-            md5_file_path = self.get_md5_store_path()
+            data_dir = os.path.join(get_abs_path(chroma_cfg['data_path']), self.current_db)
 
             if os.path.exists(persist_dir):
                 shutil.rmtree(persist_dir)
                 logger.info(f"[删除数据库]成功删除向量库目录: {persist_dir}")
+
+            if os.path.exists(data_dir):
+                shutil.rmtree(data_dir)
+                logger.info(f"[删除数据库]成功删除本地数据目录: {data_dir}")
 
             logger.info(f"[删除数据库]成功删除数据库: {self.current_db}")
             return {"success": True, "message": f"数据库 {self.current_db} 删除成功"}
@@ -461,7 +480,10 @@ class VectorStoreService:
             md5_file_path = os.path.join(persist_dir, "md5.txt")
             open(md5_file_path, 'w', encoding='utf-8').close()
             
-            logger.info(f"[创建数据库]成功创建数据库: {db_name}")
+            data_dir = os.path.join(get_abs_path(chroma_cfg['data_path']), db_name)
+            os.makedirs(data_dir, exist_ok=True)
+            
+            logger.info(f"[创建数据库]成功创建数据库: {db_name}，向量库目录: {persist_dir}，数据目录: {data_dir}")
             return {"success": True, "message": f"数据库 {db_name} 创建成功"}
         except Exception as e:
             logger.error(f"[创建数据库]创建数据库时发生错误：{repr(e)},exc_info=True")

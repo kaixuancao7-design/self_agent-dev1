@@ -20,10 +20,10 @@ class CloudChatModelFactory(BaseModelFactory):
 class OllamaChatModelFactory(BaseModelFactory):
     def generator(self) -> Optional[BaseChatModel]:
         try:
+            from langchain_ollama import ChatOllama
+        except ImportError:
+            logger.warning("[ModelFactory] langchain_ollama 包未安装，尝试使用 langchain_community")
             from langchain_community.chat_models.ollama import ChatOllama
-        except Exception as exc:
-            logger.error(f"[ModelFactory] 无法加载 Ollama 模型库：{exc}")
-            raise
 
         model_name = agent_cfg.get("ollama_model_name", "llama2")
         base_url = agent_cfg.get("ollama_base_url", "http://localhost:11434")
