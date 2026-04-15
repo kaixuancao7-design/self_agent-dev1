@@ -1,7 +1,0 @@
-{"timestamp": "2026-04-15 18:47:26", "event": "session_start", "session_id": "session_20260415_184726_6e87ddde"}
-{"timestamp": "2026-04-15 18:47:26", "event": "query_received", "payload": {"query": "AI Agent最近热点", "tool_count": 8, "model_source": "ollama"}}
-{"timestamp": "2026-04-15 18:47:26", "event": "observe", "payload": {"iteration": 1, "messages": [{"role": "user", "content": "AI Agent最近热点"}], "context": {"report": false, "session_id": "session_20260415_184726_6e87ddde"}}}
-{"timestamp": "2026-04-15 18:47:26", "event": "think", "payload": {"iteration": 1, "note": "开始模型执行"}}
-{"timestamp": "2026-04-15 18:47:26", "event": "stream_chunk", "payload": {"iteration": 1, "chunk": "AI Agent最近热点"}}
-{"timestamp": "2026-04-15 18:47:26", "event": "retry", "payload": {"attempt": 1, "error": "'NoneType' object has no attribute 'get'", "max_attempts": 3, "yielded_any": true}}
-{"timestamp": "2026-04-15 18:47:26", "event": "fatal_error", "payload": {"attempt": 1, "error": "'NoneType' object has no attribute 'get'", "yielded_any": true}}

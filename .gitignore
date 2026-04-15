@@ -1,0 +1,48 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Database and storage
+chromadb/
+chroma/
+data/
+image/
+
+# Logs
+logs/
+*.log
+
+# Index files
+*.pkl
+*.sqlite3
+
+# Streamlit
+.streamlit/
+*.streamlit
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Configuration (keep sample configs but ignore local overrides)
+config/local.yml
+config/.env
+
+# Testing
+test_*.py

@@ -1,4 +1,0 @@
-{"timestamp": "2026-04-15 19:25:58", "event": "session_start", "session_id": "session_20260415_192558_e8bab53b"}
-{"timestamp": "2026-04-15 19:25:58", "event": "query_received", "payload": {"query": "AI Agent最近热点", "tool_count": 8, "model_source": "ollama"}}
-{"timestamp": "2026-04-15 19:25:58", "event": "observe", "payload": {"iteration": 1, "messages": [{"role": "user", "content": "AI Agent最近热点"}], "context": {"report": false, "session_id": "session_20260415_192558_e8bab53b"}}}
-{"timestamp": "2026-04-15 19:25:58", "event": "think", "payload": {"iteration": 1, "note": "开始模型执行"}}
