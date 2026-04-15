@@ -1,0 +1,29 @@
+2026-04-15 20:00:48,667 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 20:00:53,631 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 20:00:53,773 - agent_logger - INFO - Agent created with 8 tools
+2026-04-15 20:01:14,852 - agent_logger - INFO - [切换数据库]成功切换到数据库: external
+2026-04-15 20:16:36,144 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 20:17:50,110 - agent_logger - INFO - [TaskDecomposer] 任务拆解完成，目标: 帮我制定一个AI行业研究方案，子任务数: 8
+2026-04-15 20:17:50,111 - agent_logger - INFO - [PathPlanner] 路径规划完成，共 8 个任务
+2026-04-15 20:28:16,208 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 20:29:05,609 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 20:29:06,517 - agent_logger - INFO - [get_weather] 获取城市天气: Beijing
+2026-04-15 20:29:06,517 - agent_logger - INFO - [get_user_location] 获取用户位置: 上海市浦东新区
+2026-04-15 20:29:06,518 - agent_logger - INFO - [get_user_id] 获取用户ID: USER_002
+2026-04-15 20:29:06,518 - agent_logger - INFO - [get_current_month] 获取当前月份: 2026年4月
+2026-04-15 20:29:06,518 - agent_logger - INFO - [task_decompose] 开始任务拆解: Help me create a study plan
+2026-04-15 20:38:23,117 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 20:38:24,163 - agent_logger - INFO - [web_search] 执行搜索: AI Agent latest trends 2026
+2026-04-15 20:38:24,164 - agent_logger - INFO - [WebSearch] 使用模拟搜索: AI Agent latest trends 2026
+2026-04-15 20:38:24,164 - agent_logger - INFO - [web_search] 搜索完成，结果长度: 590
+2026-04-15 20:38:24,164 - agent_logger - INFO - [fetch_webpage] 获取网页内容: https://example.com
+2026-04-15 20:38:24,432 - agent_logger - INFO - [fetch_webpage] 获取成功，内容长度: 112
+2026-04-15 20:38:24,571 - agent_logger - INFO - Agent created with 12 tools
+2026-04-15 20:38:44,161 - agent_logger - INFO - [ModelFactory] 初始化本地 Ollama 模型：qwen3.5:9b @ http://localhost:11434
+2026-04-15 20:38:45,074 - agent_logger - INFO - [web_search] 执行搜索: AI Agent latest trends 2026
+2026-04-15 20:38:45,075 - agent_logger - INFO - [WebSearch] 使用模拟搜索: AI Agent latest trends 2026
+2026-04-15 20:38:45,075 - agent_logger - INFO - [web_search] 搜索完成，结果长度: 590
+2026-04-15 20:38:45,075 - agent_logger - INFO - [fetch_webpage] 获取网页内容: https://example.com
+2026-04-15 20:38:45,317 - agent_logger - INFO - [fetch_webpage] 获取成功，内容长度: 112
+2026-04-15 20:38:45,428 - agent_logger - INFO - Agent created with 12 tools
+2026-04-15 20:38:45,429 - agent_logger - INFO - [ReactAgent] 高级能力模块已启用

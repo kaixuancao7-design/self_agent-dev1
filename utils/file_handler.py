@@ -168,8 +168,35 @@ def get_file_loader(file_path: str):
         return csv_loader
     elif file_path.endswith('.html') or file_path.endswith('.htm'):
         return html_loader
+    elif file_path.endswith('.png') or file_path.endswith('.jpg') or file_path.endswith('.jpeg') or file_path.endswith('.gif'):
+        return image_loader
     else:
         return None
+
+def image_loader(file_path: str) -> list[Document]:
+    """
+    图片文件加载器，返回包含图片信息的Document
+    :param file_path: 图片文件路径
+    :return: Document对象列表
+    """
+    from rag.image_index import image_index
+    
+    image_id = image_index.add_image(file_path)
+    image_index.save()
+    
+    if image_id:
+        logger.info(f"[加载图片]图片{file_path}已添加到索引，ID: {image_id}")
+        return [Document(
+            page_content=f"图片文件: {os.path.basename(file_path)}, 图片ID: {image_id}",
+            metadata={
+                "source": file_path,
+                "image_id": image_id,
+                "file_type": "image"
+            }
+        )]
+    else:
+        logger.error(f"[加载图片]无法添加图片{file_path}到索引")
+        return []
 
 def load_file_content(file_path: str) -> list[Document]:
     """
@@ -185,4 +212,4 @@ def load_file_content(file_path: str) -> list[Document]:
         return []
 
 # 支持的文件类型列表
-SUPPORTED_FILE_TYPES = ('.txt', '.pdf', '.docx', '.md', '.xlsx', '.xls', '.csv', '.html', '.htm')
+SUPPORTED_FILE_TYPES = ('.txt', '.pdf', '.docx', '.md', '.xlsx', '.xls', '.csv', '.html', '.htm', '.png', '.jpg', '.jpeg', '.gif')

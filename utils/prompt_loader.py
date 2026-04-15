@@ -40,8 +40,31 @@ def load_report_prompt() -> str:
     except Exception as e:
         logger.error(f"[加载报告提示词]加载提示词文件失败：{str(e)}")
         raise e
+
+def load_prompt(prompt_name: str) -> str:
+    """
+    通用提示词加载函数
+    :param prompt_name: 提示词名称（不带扩展名）
+    :return: 提示词内容，如果文件不存在返回空字符串
+    """
+    import os
+    
+    try:
+        prompt_dir = get_abs_path(prompts_cfg.get("prompt_dir", "prompts"))
+        prompt_path = os.path.join(prompt_dir, f"{prompt_name}.txt")
+        
+        if os.path.exists(prompt_path):
+            with open(prompt_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        else:
+            logger.warning(f"[加载提示词]提示词文件不存在：{prompt_path}")
+            return ""
+    except Exception as e:
+        logger.error(f"[加载提示词]加载提示词文件失败：{str(e)}")
+        return ""
     
 if __name__ == "__main__":
     print(load_system_prompt())
     print(load_rag_prompt())
     print(load_report_prompt())
+    print(load_prompt("task_decompose"))
