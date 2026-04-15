@@ -23,12 +23,28 @@ class ReactAgent:
             fill_context_report,
             get_user_history,
         ]
-        self.agent = create_agent(
-            model=chat_model,
-            system_prompt=load_system_prompt(),
-            tools=self.tools,
-            middleware=[log_before_model, monitor_tool, report_prompt_switch],
-        )
+        
+        # Disable tools for vision models to prevent streaming errors
+        if 'vl' in chat_model.model.lower() or 'vision' in chat_model.model.lower():
+            self.tools = []
+            logger.warning("Vision model detected, disabling tools to prevent streaming errors")
+        
+        try:
+            self.agent = create_agent(
+                model=chat_model,
+                system_prompt=load_system_prompt(),
+                tools=self.tools,
+                middleware=[log_before_model, monitor_tool, report_prompt_switch],
+            )
+            logger.info(f"Agent created with {len(self.tools)} tools")
+        except NotImplementedError:
+            logger.warning("Model does not support tools, creating agent without tools")
+            self.agent = create_agent(
+                model=chat_model,
+                system_prompt=load_system_prompt(),
+                tools=[],
+                middleware=[log_before_model, monitor_tool, report_prompt_switch],
+            )
         self.session: AgentSession | None = None
         self.retry_max_attempts = int(agent_cfg.get("retry_max_attempts", 3))
         self.retry_backoff_seconds = float(agent_cfg.get("retry_backoff_seconds", 2))
@@ -50,7 +66,9 @@ class ReactAgent:
             attempt += 1
             yielded_any = False
             try:
-                for chunk in self.agent.stream({"messages": messages}, stream_mode="values", context=context):
+                for chunk in self.agent.stream({"messages": messages}, config={"configurable": context}, stream_mode="messages"):
+                    if chunk is None:
+                        continue
                     yielded_any = True
                     yield chunk
                 return
