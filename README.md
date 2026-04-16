@@ -16,6 +16,7 @@
 - BM25 关键词检索
 - 混合检索策略（Hybrid Retrieval）
 - **重排功能（Reranking）**：支持 Linear、Cross-Encoder、LLM 三种重排策略
+- **Firecrawl MCP**：网页内容抓取，支持 JavaScript 渲染页面
 - 图片内容索引与检索
 
 ### 🤖 高级 Agent 能力
@@ -78,6 +79,9 @@
 | **通用工具** | get_current_month | 当前月份 | tools/ |
 | **高级规划** | evaluate_result | 结果评估 | tools/ |
 | **网络搜索** | fetch_webpage | 获取网页 | tools/ |
+| **网络搜索** | firecrawl_scrape | Firecrawl网页抓取 | skills/ |
+| **网络搜索** | firecrawl_crawl | Firecrawl网站爬取 | skills/ |
+| **网络搜索** | firecrawl_search | Firecrawl搜索 | skills/ |
 | **知识库管理** | 细粒度管理 | 数据库操作 | tools/ |
 
 ### 🔗 统一接口层（Unified API Abstraction）

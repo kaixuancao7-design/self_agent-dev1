@@ -35,3 +35,8 @@ user_locations:
   - 上海市浦东新区
   - 广州市天河区
   - 深圳市南山区
+
+# Firecrawl配置
+firecrawl:
+  api_key: "FIRECRAWL_API_KEY"  # 建议通过环境变量 FIRECRAWL_API_KEY 设置
+  base_url: https://api.firecrawl.dev
