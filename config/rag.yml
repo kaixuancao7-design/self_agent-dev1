@@ -1,2 +1,24 @@
+# RAG配置
+
+# 云端聊天模型
 cloud_chat_model_name: qwen3-max
+
+# Embedding配置
+embedding:
+  provider: ollama  # 可选值: azure, openai, deepseek, ollama
+  model: all-minilm
+  base_url: http://localhost:11434
+  # Azure OpenAI配置
+  azure_endpoint: https://your-resource.openai.azure.com/
+  azure_deployment_name: your-embedding-deployment
+  api_key: ""  # 建议通过环境变量或密钥管理服务设置
+  
+# 嵌入模型名称（兼容旧配置）
 embedding_model_name: text-embedding-v4
+
+# 检索配置
+retrieval:
+  top_k: 5
+  hybrid_weight: 0.5
+  chunk_size: 512
+  chunk_overlap: 64

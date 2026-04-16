@@ -63,7 +63,15 @@ class ReactAgent:
         ]
         
         # Disable tools for vision models to prevent streaming errors
-        if 'vl' in chat_model.model.lower() or 'vision' in chat_model.model.lower():
+        model_name = ""
+        if hasattr(chat_model, 'model'):
+            model_name = chat_model.model
+        elif hasattr(chat_model, '_model_name'):
+            model_name = chat_model._model_name
+        elif hasattr(chat_model, 'model_name'):
+            model_name = chat_model.model_name
+        
+        if model_name and ('vl' in model_name.lower() or 'vision' in model_name.lower()):
             self.tools = []
             logger.warning("Vision model detected, disabling tools to prevent streaming errors")
         

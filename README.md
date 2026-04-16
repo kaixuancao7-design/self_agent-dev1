@@ -79,6 +79,32 @@
 | **网络搜索** | fetch_webpage | 获取网页 | tools/ |
 | **知识库管理** | 细粒度管理 | 数据库操作 | tools/ |
 
+### 🔗 统一接口层（Unified API Abstraction）
+
+系统提供统一的LLM和Embedding调用接口，屏蔽不同Provider的实现差异。
+
+**核心抽象:**
+
+| 抽象类 | 描述 | 核心方法 |
+|--------|------|----------|
+| `BaseLLM` | LLM抽象基类 | `chat(messages)`, `generate(prompt)`, `chat_stream(messages)` |
+| `BaseEmbedding` | Embedding抽象基类 | `embed(texts)`, `embed_single(text)` |
+| `BaseVisionLLM` | Vision LLM抽象基类 | `chat_with_image(messages, image_urls)` |
+
+**Provider支持:**
+
+| Provider | 典型场景 | 配置切换点 |
+|----------|----------|------------|
+| **Azure OpenAI** | 企业合规、私有云部署、区域数据驻留 | `provider: azure` |
+| **OpenAI 原生** | 通用开发、最新模型尝鲜 | `provider: openai` |
+| **DeepSeek** | 成本优化、特定语言优化 | `provider: deepseek` |
+| **Ollama/vLLM** | 完全离线、隐私敏感、无API成本 | `provider: ollama` |
+
+**工厂模式:**
+- `LLMFactory.create(provider, **kwargs)` - 创建LLM实例
+- `EmbeddingFactory.create(provider, **kwargs)` - 创建Embedding实例
+- `VisionLLMFactory.create(provider, **kwargs)` - 创建Vision LLM实例
+
 ## 🏗️ 项目结构
 
 ```
@@ -114,6 +140,16 @@
 │   │   └── search_tools.py        # 网络搜索工具
 │   ├── react_agent.py       # 主 Agent 实现（集成Skills框架）
 │   └── session.py           # 会话管理
+├── model/                   # 统一接口层（Unified API Abstraction）
+│   ├── __init__.py          # 模块导出
+│   ├── base.py              # 抽象基类（BaseLLM、BaseEmbedding、BaseVisionLLM）
+│   ├── factory.py           # 工厂类（LLMFactory、EmbeddingFactory、VisionLLMFactory）
+│   └── providers/           # Provider实现
+│       ├── __init__.py              # Provider导出
+│       ├── azure_provider.py        # Azure OpenAI实现
+│       ├── openai_provider.py       # OpenAI原生实现
+│       ├── deepseek_provider.py     # DeepSeek实现
+│       └── ollama_provider.py       # Ollama本地实现
 ├── rag/                     # RAG 检索服务
 │   ├── vector_store.py      # 向量存储（含空Chunk过滤）
 │   ├── bm25_index.py        # BM25 索引
@@ -240,6 +276,23 @@ enable_advanced_features: true  # 启用高级能力
 | `fact_check.txt` | 事实核查提示词 |
 
 ## 📋 更新日志
+
+### v1.3.0 (2026-04-16)
+
+**新增功能:**
+- ✅ 统一接口层（Unified API Abstraction）
+  - 抽象基类：`BaseLLM`、`BaseEmbedding`、`BaseVisionLLM`
+  - 工厂模式：`LLMFactory`、`EmbeddingFactory`、`VisionLLMFactory`
+  - 支持多Provider切换：Azure OpenAI、OpenAI、DeepSeek、Ollama
+  - 统一调用接口，上层代码无需关心底层实现
+
+**Provider支持:**
+| 提供者类型 | 典型场景 | 配置切换点 |
+|------------|----------|------------|
+| Azure OpenAI | 企业合规、私有云部署 | `provider: azure` |
+| OpenAI 原生 | 通用开发、最新模型 | `provider: openai` |
+| DeepSeek | 成本优化、特定语言优化 | `provider: deepseek` |
+| Ollama/vLLM | 完全离线、隐私敏感 | `provider: ollama` |
 
 ### v1.2.0 (2026-04-16)
 
