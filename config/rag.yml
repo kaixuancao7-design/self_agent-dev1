@@ -22,3 +22,9 @@ retrieval:
   hybrid_weight: 0.5
   chunk_size: 512
   chunk_overlap: 64
+
+# 重排配置
+rerank:
+  method: linear  # 可选值: linear, cross_encoder, llm
+  cross_encoder_model: BAAI/bge-reranker-base  # Cross-Encoder模型名称
+  llm_rerank_prompt: ""  # 自定义LLM重排提示词（可选）

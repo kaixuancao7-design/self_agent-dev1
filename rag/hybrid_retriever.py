@@ -8,11 +8,13 @@ import math
 from typing import List, Dict, Tuple, Optional, Any
 from collections import defaultdict
 from rag.bm25_index import bm25_index
+from rag.reranker import RerankerFactory, BaseReranker
 from utils.logger_handler import logger
 
 
 class HybridRetriever:
-    def __init__(self, vector_service: "VectorStoreService", k1: float = 1.5, b: float = 0.75):
+    def __init__(self, vector_service: "VectorStoreService", k1: float = 1.5, b: float = 0.75, 
+                 rerank_method: str = "linear", **rerank_kwargs):
         self.vector_service = vector_service
         self.k1 = k1
         self.b = b
@@ -23,6 +25,8 @@ class HybridRetriever:
             "深度学习": ["DL", "deep learning"],
             # 添加更多...
         }
+        # 初始化重排器
+        self.reranker: BaseReranker = RerankerFactory.create(rerank_method, **rerank_kwargs)
 
     def _extract_keywords(self, query: str) -> List[str]:
         """关键词提取：去除停用词，提取实体和动词"""
@@ -70,16 +74,27 @@ class HybridRetriever:
             filtered.append((doc_id, score))
         return filtered
 
-    def _rerank(self, query: str, candidates: List[Tuple[str, float]], rerank_method: str = "none") -> List[Tuple[str, float]]:
-        """重排：可选Cross-Encoder或LLM"""
-        if rerank_method == "none":
-            return candidates
-        # 实现Cross-Encoder或LLM重排
-        # 暂时返回原顺序
-        logger.warning("Rerank not implemented, using original order")
-        return candidates
+    def _rerank(self, query: str, candidates: List[Tuple[str, float]], rerank_method: str = None) -> List[Tuple[str, float]]:
+        """重排：使用配置的重排器进行精排"""
+        # 如果没有指定方法，使用初始化时配置的重排器
+        if rerank_method is None or rerank_method == "default":
+            # 将格式转换为重排器期望的格式
+            rerank_candidates = [(doc_id, {'score': score, 'content': f"Document {doc_id}"}) 
+                                for doc_id, score in candidates]
+            reranked = self.reranker.rerank(query, rerank_candidates, top_k=len(candidates))
+            # 转换回原格式
+            return [(doc_id, result.get('rerank_score', result.get('score', score))) 
+                    for (doc_id, result), (_, score) in zip(reranked, candidates)]
+        
+        # 如果指定了其他方法，动态创建重排器
+        temp_reranker = RerankerFactory.create(rerank_method)
+        rerank_candidates = [(doc_id, {'score': score, 'content': f"Document {doc_id}"}) 
+                            for doc_id, score in candidates]
+        reranked = temp_reranker.rerank(query, rerank_candidates, top_k=len(candidates))
+        return [(doc_id, result.get('rerank_score', result.get('score', score))) 
+                for (doc_id, result), (_, score) in zip(reranked, candidates)]
 
-    def retrieve(self, query: str, top_k: int = 10, filters: Optional[Dict[str, Any]] = None, rerank_method: str = "none") -> List[Tuple[str, Any]]:
+    def retrieve(self, query: str, top_k: int = 10, filters: Optional[Dict[str, Any]] = None, rerank_method: str = "default") -> List[Tuple[str, Any]]:
         """多阶段过滤检索"""
         # 1. Query Processing
         sparse_query, dense_query = self._expand_query(query)
@@ -89,7 +104,8 @@ class HybridRetriever:
         # Dense Route
         dense_retriever = self.vector_service.get_retriever()
         dense_docs = dense_retriever.invoke(dense_query)
-        dense_results = [(doc.metadata.get('source', str(i)), 1.0) for i, doc in enumerate(dense_docs)]  # 简化score
+        dense_results = [(doc.metadata.get('source', str(i)), doc.metadata.get('score', 1.0)) 
+                         for i, doc in enumerate(dense_docs)]
 
         # Sparse Route
         sparse_results = bm25_index.search(sparse_query, top_k=top_k)
@@ -103,16 +119,24 @@ class HybridRetriever:
 
         # Reranking
         reranked_results = self._rerank(query, filtered_results, rerank_method)
+        logger.info(f"[HybridRetriever] 重排完成，使用方法: {rerank_method}")
 
         # 返回Top-K
         final_results = reranked_results[:top_k]
 
-        # 获取实际文档内容（简化）
+        # 获取实际文档内容
         results = []
         for doc_id, score in final_results:
-            # 这里需要根据doc_id获取文档内容
-            # 暂时返回doc_id和score
-            results.append((doc_id, {"score": score, "content": f"Document {doc_id}"}))
+            # 尝试从向量服务获取文档内容
+            doc_content = f"Document {doc_id}"
+            try:
+                # 这里可以调用向量服务获取实际文档内容
+                docs = self.vector_service.retrieve_docs(query, top_k=1, filters={"source": doc_id})
+                if docs:
+                    doc_content = docs[0].get('content', doc_content)
+            except Exception:
+                pass
+            results.append((doc_id, {"score": score, "content": doc_content}))
 
         return results
 

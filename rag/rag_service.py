@@ -1,36 +1,79 @@
 """
 rag总结服务：用户提问，搜索参考资料，返回检索到的文档内容
+支持重排功能提升检索效果
 """
 from rag.vector_store import VectorStoreService
+from rag.hybrid_retriever import HybridRetriever, get_hybrid_retriever
 from utils.logger_handler import logger
 from langchain_core.documents import Document
+from utils.config_handler import rag_cfg
 
 
 class RagSummerizeService(object):
     def __init__(self):
         self.vector_store = VectorStoreService()
         self.retriever = self.vector_store.get_retriever()
+        # 初始化混合检索器（支持重排）
+        self._init_hybrid_retriever()
     
-    def retrieve_docs(self, query: str) -> list[Document]:
+    def _init_hybrid_retriever(self):
+        """初始化混合检索器"""
         try:
-            docs = self.retriever.invoke(query)
-            return docs
+            rerank_method = rag_cfg.get("rerank_method", "linear")
+            self.hybrid_retriever = get_hybrid_retriever(self.vector_store)
+            logger.info(f"[RAG总结服务] 初始化混合检索器，重排方法: {rerank_method}")
+        except Exception as e:
+            logger.warning(f"[RAG总结服务] 初始化混合检索器失败，使用默认检索器: {e}")
+            self.hybrid_retriever = None
+    
+    def retrieve_docs(self, query: str, use_hybrid: bool = True) -> list[Document]:
+        """
+        检索相关文档
+        
+        :param query: 用户查询
+        :param use_hybrid: 是否使用混合检索（含重排）
+        :return: 文档列表
+        """
+        try:
+            if use_hybrid and self.hybrid_retriever:
+                # 使用混合检索器（含重排）
+                rerank_method = rag_cfg.get("rerank_method", "linear")
+                results = self.hybrid_retriever.retrieve(query, 
+                                                       top_k=rag_cfg.get("top_k", 5), 
+                                                       rerank_method=rerank_method)
+                # 转换为 Document 对象
+                docs = []
+                for doc_id, info in results:
+                    doc = Document(
+                        page_content=info.get('content', ''),
+                        metadata={'source': doc_id, 'score': info.get('score', 0.0)}
+                    )
+                    docs.append(doc)
+                return docs
+            else:
+                # 使用默认检索器
+                docs = self.retriever.invoke(query)
+                return docs
         except Exception as e:
             logger.error(f"[RAG总结服务]检索相关文档时发生错误：{repr(e)},exc_info=True")
             raise e
     
-    def rag_summarize(self, query: str) -> str:
+    def rag_summarize(self, query: str, use_hybrid: bool = True) -> str:
         """
         检索相关文档并返回格式化的文档内容，由agent负责生成最终总结
+        
+        :param query: 用户查询
+        :param use_hybrid: 是否使用混合检索（含重排）
         """
         try:
-            docs = self.retrieve_docs(query)
+            docs = self.retrieve_docs(query, use_hybrid=use_hybrid)
 
             context = ""
             count = 0
             for doc in docs:
                 count += 1
-                context += f"参考资料{count}：{doc.page_content}\n"
+                score = doc.metadata.get('score', 0.0)
+                context += f"参考资料{count}（相关性: {score:.2f}）：{doc.page_content}\n"
             
             if not context:
                 return "未检索到相关资料"
