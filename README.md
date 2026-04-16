@@ -27,12 +27,31 @@
 | **事实核查** | 校验答案与参考资料一致性，避免幻觉 |
 | **动态调整** | 处理失败后的备选方案 |
 
-### 🔧 工具系统
-- **核心工具**: RAG 总结服务
-- **网络搜索**: 实时资讯获取、网页内容抓取
-- **通用工具**: 天气查询、用户定位、时间获取、知识库管理
-- **报告工具**: 用户历史记录查询、报告生成
-- **高级工具**: 任务拆解、路径规划、自我评估、事实核查、动态调整
+### 🔧 Skills 框架（Anthropic 标准）
+
+系统基于 **Anthropic Skills** 标准框架构建，每个技能包含：
+- **SKILL.md**: 技能说明文档（能力描述、参数、返回值、使用场景）
+- **reference/**: 详细参考文档（API说明、实现细节）
+- **script/**: 可执行脚本（技能实现代码）
+
+### 技能分类
+
+| 分类 | 技能 | 功能 | 位置 |
+|------|------|------|------|
+| **核心检索** | rag_summarize | 知识库语义检索 | skills/ |
+| **网络搜索** | web_search | 实时网络搜索 | skills/ |
+| **通用工具** | get_weather | 天气查询 | skills/ |
+| **高级规划** | task_decompose | 任务拆解 | skills/ |
+| **高级规划** | fact_check | 事实核查 | skills/ |
+| **知识库管理** | kb_management | 数据库管理 | skills/ |
+| **报告生成** | get_user_history | 用户历史 | tools/ |
+| **报告生成** | fill_context_report | 报告切换 | tools/ |
+| **通用工具** | get_user_location | 用户定位 | tools/ |
+| **通用工具** | get_user_id | 用户ID | tools/ |
+| **通用工具** | get_current_month | 当前月份 | tools/ |
+| **高级规划** | evaluate_result | 结果评估 | tools/ |
+| **网络搜索** | fetch_webpage | 获取网页 | tools/ |
+| **知识库管理** | 细粒度管理 | 数据库操作 | tools/ |
 
 ## 🏗️ 项目结构
 
@@ -44,26 +63,50 @@
 │   │   ├── self_evaluator.py      # 自我评估
 │   │   ├── fact_checker.py        # 事实核查
 │   │   └── dynamic_adjuster.py    # 动态调整
-│   ├── tools/               # 工具模块
-│   │   ├── core_tools.py          # 核心业务工具
-│   │   ├── utility_tools.py       # 通用工具
+│   ├── skills/              # Skills 框架（Anthropic 标准）
+│   │   ├── __init__.py            # 技能导出
+│   │   ├── skill_loader.py        # 技能加载器（自动发现/加载）
+│   │   ├── rag_summarize/         # RAG检索技能
+│   │   │   ├── SKILL.md           # 技能说明文档
+│   │   │   ├── reference/         # 参考文档
+│   │   │   └── script/main.py     # 可执行脚本
+│   │   ├── web_search/            # 网络搜索技能
+│   │   ├── get_weather/           # 天气查询技能
+│   │   ├── task_decompose/        # 任务拆解技能
+│   │   ├── fact_check/            # 事实核查技能
+│   │   └── kb_management/         # 知识库管理技能
+│   ├── tools/               # 传统工具模块（细粒度工具）
+│   │   ├── __init__.py            # 工具导出
+│   │   ├── utility_tools.py       # 通用工具+知识库管理
 │   │   ├── report_tools.py        # 报告工具
-│   │   ├── advanced_tools.py      # 高级能力工具
+│   │   ├── advanced_tools.py      # 高级能力工具（评估）
 │   │   └── search_tools.py        # 网络搜索工具
-│   ├── react_agent.py       # 主 Agent 实现
+│   ├── react_agent.py       # 主 Agent 实现（集成Skills框架）
 │   └── session.py           # 会话管理
 ├── rag/                     # RAG 检索服务
-│   ├── vector_store.py      # 向量存储
+│   ├── vector_store.py      # 向量存储（含空Chunk过滤）
 │   ├── bm25_index.py        # BM25 索引
 │   ├── hybrid_retriever.py  # 混合检索
 │   ├── image_index.py       # 图片索引
 │   └── rag_service.py       # RAG 服务
 ├── config/                  # 配置文件
+│   ├── agent.yml            # Agent 配置
+│   ├── chroma.yml           # Chroma 配置
+│   ├── rag.yml              # RAG 配置
+│   └── prompts.yml          # 提示词配置
 ├── prompts/                 # 提示词文件
-├── chromadb/                # Chroma 向量数据库
-├── data/                    # 数据文件
+│   ├── main_prompt.txt      # 主提示词
+│   ├── rag_summarize.txt    # RAG总结提示词
+│   ├── report_prompt.txt    # 报告生成提示词
+│   ├── task_decompose.txt   # 任务拆解提示词
+│   ├── self_evaluation.txt  # 自我评估提示词
+│   └── fact_check.txt       # 事实核查提示词
+├── chromadb/                # Chroma 向量数据库（按数据库名组织）
+├── data/                    # 数据文件（按数据库名组织）
 ├── utils/                   # 工具函数
 ├── model/                   # 模型工厂
+├── test/                    # 测试文件
+│   └── test_skills_framework.py  # Skills框架测试
 └── app.py                   # Streamlit 应用入口
 ```
 
@@ -136,24 +179,17 @@ enable_advanced_features: true  # 启用高级能力
 
 输入类似「生成我的使用报告」的指令，系统会自动生成个性化报告。
 
-## 🔧 工具列表
-
-| 工具名称 | 功能 | 参数 |
-|---------|------|------|
-| `rag_summarize` | 知识库检索 | query |
-| `web_search` | 网络搜索 | query, max_results |
-| `fetch_webpage` | 获取网页内容 | url |
-| `get_weather` | 获取天气 | city |
-| `get_user_location` | 获取用户位置 | 无 |
-| `get_user_id` | 获取用户ID | 无 |
-| `get_current_month` | 获取当前月份 | 无 |
-| `task_decompose` | 任务拆解 | goal |
-| `evaluate_result` | 结果评估 | task_description, result |
-| `fact_check` | 事实核查 | answer, sources |
-
 ## 🛠️ 开发
 
-### 添加新工具
+### 添加新技能（Skills 框架）
+
+1. 在 `agent/skills/` 目录下创建新技能文件夹
+2. 创建 `SKILL.md` 技能说明文档
+3. 创建 `reference/` 目录存放参考文档
+4. 创建 `script/main.py` 实现技能逻辑
+5. SkillLoader 会自动发现并加载新技能
+
+### 添加传统工具
 
 在 `agent/tools/` 目录下创建新的工具模块，然后在 `__init__.py` 中导出。
 
@@ -173,6 +209,24 @@ enable_advanced_features: true  # 启用高级能力
 | `fact_check.txt` | 事实核查提示词 |
 
 ## 📋 更新日志
+
+### v1.1.0 (2026-04-16)
+
+**框架升级:**
+- ✅ 引入 Anthropic Skills 标准框架
+- ✅ 实现 SkillLoader 自动发现和加载机制
+- ✅ 创建 6 个核心技能（rag_summarize、web_search、get_weather、task_decompose、fact_check、kb_management）
+- ✅ 更新主提示词适配 Skills 框架
+
+**代码清理:**
+- ✅ 删除重复文件（agent_tools.py、core_tools.py）
+- ✅ 移除重复工具函数（get_weather、rag_summarize、task_decompose、fact_check）
+- ✅ 更新工具导出配置
+
+**文档更新:**
+- ✅ 更新 README 文档
+- ✅ 为每个技能添加 SKILL.md 说明文档
+- ✅ 添加参考文档目录
 
 ### v1.0.0 (2026-04-15)
 
