@@ -27,6 +27,29 @@
 | **事实核查** | 校验答案与参考资料一致性，避免幻觉 |
 | **动态调整** | 处理失败后的备选方案 |
 
+### 🧠 记忆管理系统
+
+| 类型 | 描述 |
+|------|------|
+| **短期记忆** | 跟踪当前会话上下文，支持流畅的多轮对话 |
+| **长期记忆** | 通过 RAG 访问外部知识库，记住用户偏好、历史任务进度和关键业务信息 |
+
+### 🔍 意图识别能力
+
+| 功能 | 描述 |
+|------|------|
+| **显式意图识别** | 通过规则匹配识别常见意图（知识查询、投诉分析、任务请求等） |
+| **隐含意图分析** | 深度理解用户真实需求，不仅仅是关键词匹配 |
+| **智能响应** | 根据识别到的意图，自动选择合适的工具和策略 |
+
+**支持的意图类型:**
+- `knowledge_query`: 知识查询（如"什么是AI Agent？"）
+- `complaint_analysis`: 投诉分析（如"最近客户投诉变多了"）
+- `task_request`: 任务请求（如"帮我制定方案"）
+- `data_retrieval`: 数据检索（如"查询历史记录"）
+- `conversation`: 闲聊对话（如"你好"）
+- `preference_setting`: 偏好设置（如"设置我的偏好"）
+
 ### 🔧 Skills 框架（Anthropic 标准）
 
 系统基于 **Anthropic Skills** 标准框架构建，每个技能包含：
@@ -62,7 +85,9 @@
 │   │   ├── path_planner.py        # 路径规划
 │   │   ├── self_evaluator.py      # 自我评估
 │   │   ├── fact_checker.py        # 事实核查
-│   │   └── dynamic_adjuster.py    # 动态调整
+│   │   ├── dynamic_adjuster.py    # 动态调整
+│   │   ├── memory_manager.py      # 记忆管理（短期+长期记忆）
+│   │   └── intent_recognizer.py   # 意图识别
 │   ├── skills/              # Skills 框架（Anthropic 标准）
 │   │   ├── __init__.py            # 技能导出
 │   │   ├── skill_loader.py        # 技能加载器（自动发现/加载）
@@ -210,13 +235,22 @@ enable_advanced_features: true  # 启用高级能力
 
 ## 📋 更新日志
 
-### v1.1.0 (2026-04-16)
+### v1.2.0 (2026-04-16)
+
+**新增功能:**
+- ✅ 记忆管理系统（Memory Management）
+  - 短期记忆：跟踪当前会话上下文，支持多轮对话
+  - 长期记忆：通过 RAG 访问外部知识库，记住用户偏好和历史信息
+- ✅ 意图识别能力（Intent Recognition）
+  - 显式意图识别：规则匹配常见意图类型
+  - 隐含意图分析：深度理解用户真实需求
+  - 支持 6 种意图类型：知识查询、投诉分析、任务请求、数据检索、闲聊对话、偏好设置
 
 **框架升级:**
 - ✅ 引入 Anthropic Skills 标准框架
 - ✅ 实现 SkillLoader 自动发现和加载机制
 - ✅ 创建 6 个核心技能（rag_summarize、web_search、get_weather、task_decompose、fact_check、kb_management）
-- ✅ 更新主提示词适配 Skills 框架
+- ✅ 更新主提示词适配 Skills 框架和新功能
 
 **代码清理:**
 - ✅ 删除重复文件（agent_tools.py、core_tools.py）

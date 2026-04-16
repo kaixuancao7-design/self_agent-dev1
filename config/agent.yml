@@ -6,6 +6,7 @@ retry_max_attempts: 3
 retry_backoff_seconds: 2
 fallback_to_cloud: true
 enable_advanced_features: true  # 是否启用高级能力（任务拆解、路径规划、自我评估、事实核查）
+enable_memory: true  # 是否启用记忆管理（短期记忆+长期记忆）
 
 # 用户配置
 user_ids:

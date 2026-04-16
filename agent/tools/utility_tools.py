@@ -1,25 +1,14 @@
 """
 通用工具
-包含天气、定位、用户ID、时间等通用功能
+包含定位、用户ID、时间等通用功能以及知识库管理工具
+
+注意：get_weather 已迁移到 Skills 框架 (agent/skills/get_weather/)
 """
 from langchain_core.tools import tool
 from utils.config_handler import agent_cfg
 from utils.logger_handler import logger
 import random
 from datetime import datetime
-
-
-@tool(description="获取指定城市的天气信息")
-def get_weather(city: str) -> str:
-    """
-    获取指定城市的天气信息
-    
-    :param city: 城市名称
-    :return: 天气信息字符串
-    """
-    logger.info(f"[get_weather] 获取城市天气: {city}")
-    # 后续可接入真实天气API
-    return f"{city}的天气是晴天，温度25度，湿度60%，风速10公里每小时。"
 
 
 @tool(description="获取用户定位信息")
