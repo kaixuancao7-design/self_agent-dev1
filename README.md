@@ -129,6 +129,35 @@ rerank:
 Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Reranking → Top-K Results
 ```
 
+### 📊 Ragas 量化评估
+
+系统集成 Ragas 风格的量化评估功能，用于评估检索与生成效果，并通过 Bad Case 分析持续优化。
+
+**评估指标:**
+
+| 类别 | 指标 | 说明 |
+|------|------|------|
+| **检索效果** | Hit Rate | 是否检索到至少一条相关文档 |
+| | MRR | 平均倒数排名 |
+| | Recall@k | 召回率 |
+| | Precision@k | 精确率 |
+| | Diversity | 文档多样性 |
+| **生成效果** | Faithfulness | 事实一致性（答案与文档的一致性） |
+| | Answer Relevance | 答案相关性（答案与问题的相关性） |
+| | Context Utilization | 上下文利用率 |
+| | Answer Correctness | 答案正确性 |
+| | Answer Conciseness | 答案简洁性 |
+
+**Bad Case 分析:**
+- 自动识别问题类型：检索失败、低相关性、幻觉、答案不相关、生成过度/不足
+- 提供针对性优化建议
+- 支持分块策略、提示工程、召回逻辑的优化指导
+
+**评估命令:**
+```bash
+python scripts/run_ragas_evaluation.py
+```
+
 ## 🏗️ 项目结构
 
 ```
@@ -179,8 +208,11 @@ Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Re
 │   ├── bm25_index.py        # BM25 索引
 │   ├── hybrid_retriever.py  # 混合检索（Query Processing、RRF Fusion）
 │   ├── reranker.py          # 重排器（Linear/Cross-Encoder/LLM）
+│   ├── ragas_evaluator.py   # Ragas 量化评估器
 │   ├── image_index.py       # 图片索引
 │   └── rag_service.py       # RAG 服务
+├── scripts/                 # 运行脚本
+│   └── run_ragas_evaluation.py  # Ragas 评估脚本
 ├── config/                  # 配置文件
 │   ├── agent.yml            # Agent 配置
 │   ├── chroma.yml           # Chroma 配置
@@ -317,9 +349,21 @@ enable_advanced_features: true  # 启用高级能力
   - 集成到混合检索流程
   - 可配置重排方法和参数
 
+- ✅ Ragas 量化评估功能
+  - 检索效果评估：Hit Rate、MRR、Recall、Precision、Diversity
+  - 生成效果评估：Faithfulness、Answer Relevance、Context Utilization、Answer Correctness、Answer Conciseness
+  - Bad Case 分析：自动识别问题类型并提供优化建议
+  - 支持分块策略、提示工程、召回逻辑的优化指导
+  - 生成评估报告和优化建议
+
 **检索流程优化:**
 ```
 Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Reranking → Top-K Results
+```
+
+**评估流程:**
+```
+评估 → Bad Case 分析 → 优化建议 → 迭代改进
 ```
 
 **Provider支持:**

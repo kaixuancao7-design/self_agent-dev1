@@ -49,3 +49,28 @@ test/
 
 # Additional
 read_me.md
+
+# Evaluations (Ragas评估报告)
+evaluations/
+
+# Scripts cache
+scripts/__pycache__/
+
+# Model cache (Ollama/vLLM模型缓存)
+models/
+.cache/
+
+# API keys and secrets
+*.key
+*.secret
+secrets/
+
+# Jupyter notebooks
+*.ipynb
+.ipynb_checkpoints/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
