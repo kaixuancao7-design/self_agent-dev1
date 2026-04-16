@@ -15,6 +15,7 @@
 - 基于 Chroma 向量数据库的语义检索
 - BM25 关键词检索
 - 混合检索策略（Hybrid Retrieval）
+- **重排功能（Reranking）**：支持 Linear、Cross-Encoder、LLM 三种重排策略
 - 图片内容索引与检索
 
 ### 🤖 高级 Agent 能力
@@ -105,6 +106,29 @@
 - `EmbeddingFactory.create(provider, **kwargs)` - 创建Embedding实例
 - `VisionLLMFactory.create(provider, **kwargs)` - 创建Vision LLM实例
 
+### 🔄 重排策略（Reranking）
+
+系统支持多种重排策略，提升检索结果的相关性：
+
+| 重排方法 | 实现方式 | 特点 | 适用场景 |
+|----------|----------|------|----------|
+| **Linear** | 规则线性融合 | 轻量、快速、无需额外模型 | 快速原型、低延迟场景 |
+| **Cross-Encoder** | BAAI/bge-reranker-base | 专业重排模型，效果好 | 生产环境、追求效果 |
+| **LLM** | 大语言模型精排 | 理解深层语义，成本较高 | 需要深层语义理解 |
+
+**重排配置:**
+```yaml
+# config/rag.yml
+rerank:
+  method: linear  # linear/cross_encoder/llm
+  cross_encoder_model: BAAI/bge-reranker-base
+```
+
+**检索流程:**
+```
+Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Reranking → Top-K Results
+```
+
 ## 🏗️ 项目结构
 
 ```
@@ -153,7 +177,8 @@
 ├── rag/                     # RAG 检索服务
 │   ├── vector_store.py      # 向量存储（含空Chunk过滤）
 │   ├── bm25_index.py        # BM25 索引
-│   ├── hybrid_retriever.py  # 混合检索
+│   ├── hybrid_retriever.py  # 混合检索（Query Processing、RRF Fusion）
+│   ├── reranker.py          # 重排器（Linear/Cross-Encoder/LLM）
 │   ├── image_index.py       # 图片索引
 │   └── rag_service.py       # RAG 服务
 ├── config/                  # 配置文件
@@ -285,6 +310,17 @@ enable_advanced_features: true  # 启用高级能力
   - 工厂模式：`LLMFactory`、`EmbeddingFactory`、`VisionLLMFactory`
   - 支持多Provider切换：Azure OpenAI、OpenAI、DeepSeek、Ollama
   - 统一调用接口，上层代码无需关心底层实现
+
+- ✅ 重排功能（Reranking）
+  - 三种重排策略：Linear、Cross-Encoder、LLM
+  - 自动降级机制：Cross-Encoder/LLM失败时自动降级到Linear
+  - 集成到混合检索流程
+  - 可配置重排方法和参数
+
+**检索流程优化:**
+```
+Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Reranking → Top-K Results
+```
 
 **Provider支持:**
 | 提供者类型 | 典型场景 | 配置切换点 |
