@@ -67,6 +67,9 @@
 | **高级规划** | task_decompose | 任务拆解 | skills/ |
 | **高级规划** | fact_check | 事实核查 | skills/ |
 | **知识库管理** | kb_management | 数据库管理 | skills/ |
+| **智能内容生成** | content_generator | PPT/思维导图/报告生成 | skills/ |
+| **文档处理** | document_processor | PDF/Word/Excel解析 | skills/ |
+| **知识治理** | knowledge_governance | 质量报告/统计分析 | skills/ |
 | **报告生成** | get_user_history | 用户历史 | tools/ |
 | **报告生成** | fill_context_report | 报告切换 | tools/ |
 | **通用工具** | get_user_location | 用户定位 | tools/ |
@@ -99,7 +102,10 @@
 │   │   ├── get_weather/           # 天气查询技能
 │   │   ├── task_decompose/        # 任务拆解技能
 │   │   ├── fact_check/            # 事实核查技能
-│   │   └── kb_management/         # 知识库管理技能
+│   │   ├── kb_management/         # 知识库管理技能
+│   │   ├── content_generator/     # 智能内容生成技能
+│   │   ├── document_processor/    # 文档处理技能
+│   │   └── knowledge_governance/  # 知识治理技能
 │   ├── tools/               # 传统工具模块（细粒度工具）
 │   │   ├── __init__.py            # 工具导出
 │   │   ├── utility_tools.py       # 通用工具+知识库管理

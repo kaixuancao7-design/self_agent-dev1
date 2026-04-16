@@ -46,3 +46,6 @@ config/.env
 
 # Testing
 test/
+
+# Additional
+read_me.md
