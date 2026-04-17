@@ -182,10 +182,10 @@ class VisionLLMFactory:
 class CloudChatModelFactory:
     """云端模型工厂（兼容旧代码）"""
     def generator(self):
-        from langchain_community.chat_models.tongyi import ChatTongyi
+        from model.providers.tongyi_provider import TongyiLLM
         model_name = rag_cfg.get("cloud_chat_model_name", "qwen3-max")
         logger.info(f"[ModelFactory] 初始化云端模型：{model_name}")
-        return ChatTongyi(model=model_name)
+        return TongyiLLM(model=model_name)
 
 
 class OllamaChatModelFactory:
@@ -197,8 +197,8 @@ class OllamaChatModelFactory:
             logger.warning("[ModelFactory] langchain_ollama 包未安装，尝试使用 langchain_community")
             from langchain_community.chat_models.ollama import ChatOllama
 
-        model_name = agent_cfg.get("ollama_model_name", "llama2")
-        base_url = agent_cfg.get("ollama_base_url", "http://localhost:11434")
+        model_name = agent_cfg.get("model", "qwen3.5:9b")
+        base_url = agent_cfg.get("base_url", "http://localhost:11434")
         logger.info(f"[ModelFactory] 初始化本地 Ollama 模型：{model_name} @ {base_url}")
         return ChatOllama(model=model_name, base_url=base_url)
 

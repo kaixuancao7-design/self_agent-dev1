@@ -1,20 +1,150 @@
 import time
 
 from agent.react_agent import ReactAgent
+from agent.langgraph_workflow import LangGraphAgent
+from utils.config_handler import agent_cfg
 import streamlit as st
 
 
+def detect_task_complexity(prompt: str) -> str:
+    """
+    检测任务复杂度，决定使用哪种模式
+    
+    :param prompt: 用户输入
+    :return: 推荐的模式（"react" 或 "langgraph"）
+    """
+    # 读取配置
+    auto_switch = agent_cfg.get("langgraph", {}).get("auto_switch", False)
+    
+    if not auto_switch:
+        return "react"
+    
+    # 基于多个维度判断复杂度
+    complexity_score = 0
+    
+    # 1. 输入长度
+    if len(prompt) > 30:
+        complexity_score += 1
+    if len(prompt) > 60:
+        complexity_score += 1  # 更长的输入额外加分
+    
+    # 2. 关键词匹配（复杂任务指示词）- 每个匹配都加分
+    complex_keywords = [
+        "帮我", "请", "需要", "制定", "规划", "创建", "分析",
+        "报告", "总结", "研究", "方案", "计划", "步骤", "流程",
+        "设计", "撰写", "整理", "分析", "调研", "评估", "优化"
+    ]
+    keyword_matches = 0
+    for keyword in complex_keywords:
+        if keyword in prompt:
+            keyword_matches += 1
+    complexity_score += min(keyword_matches, 2)  # 最多加2分
+    
+    # 3. 问句类型（多个问题或嵌套问题）
+    question_count = prompt.count("？") + prompt.count("?") + prompt.count("吗")
+    if question_count >= 2:
+        complexity_score += 1
+    
+    # 4. 任务拆解指示词 - 权重更高
+    task_decompose_keywords = ["拆解", "分解", "步骤", "子任务", "先", "再", "然后", "依次"]
+    for keyword in task_decompose_keywords:
+        if keyword in prompt:
+            complexity_score += 2
+            break
+    
+    # 5. 明确的多步骤任务指示
+    multi_step_indicators = ["首先", "其次", "接着", "最后", "第一步", "第二步"]
+    for indicator in multi_step_indicators:
+        if indicator in prompt:
+            complexity_score += 2
+            break
+    
+    # 判断结果
+    if complexity_score >= 2:
+        return "langgraph"
+    return "react"
+
+
 def show_chat_page():
-    st.title("智能知识库助手")
+    st.title("🤖 智能知识库助手")
     st.divider()
 
+    # 添加自定义 CSS 样式
+    st.markdown("""
+        <style>
+        /* 打字光标动画 */
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        .typing-cursor {
+            animation: blink 1s infinite;
+            color: #0ea5e9;
+            font-weight: bold;
+        }
+        
+        /* 消息气泡样式 */
+        .user-message {
+            background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+            color: white;
+            border-radius: 12px 12px 4px 12px;
+        }
+        
+        .assistant-message {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            color: #1e293b;
+            border-radius: 12px 12px 12px 4px;
+        }
+        
+        /* 状态提示样式 */
+        .status-info {
+            border-left: 4px solid #0ea5e9;
+            padding-left: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .status-success {
+            border-left: 4px solid #22c55e;
+            padding-left: 12px;
+            margin-bottom: 12px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # 读取配置
+    auto_switch_enabled = agent_cfg.get("langgraph", {}).get("auto_switch", False)
+    
+    # 添加模式选择
+    if auto_switch_enabled:
+        mode_options = ["🔄 自动切换模式", "⚡ ReactAgent 模式", "🧠 LangGraph 工作流模式"]
+    else:
+        mode_options = ["⚡ ReactAgent 模式", "🧠 LangGraph 工作流模式"]
+    
+    selected_mode = st.sidebar.selectbox(
+        "选择工作模式",
+        mode_options,
+        index=0
+    )
+
+    # 初始化 Agent（延迟到收到用户输入时根据复杂度决定）
     if "agent" not in st.session_state:
+        # 默认使用 ReactAgent
         st.session_state["agent"] = ReactAgent()
+        st.session_state["agent_mode"] = "⚡ ReactAgent 模式"
+    
     if "message" not in st.session_state:
         st.session_state["message"] = []
 
-    for message in st.session_state["message"]:
-        st.chat_message(message["role"]).write(message["content"])
+    # 显示消息历史
+    for idx, message in enumerate(st.session_state["message"]):
+        with st.chat_message(message["role"]):
+            st.write(message["content"])
+            # 添加复制按钮（使用索引确保唯一key）
+            if message["role"] == "assistant":
+                if st.button("📋 复制", key=f"copy_{idx}"):
+                    import pyperclip
+                    pyperclip.copy(message["content"])
+                    st.success("已复制到剪贴板！")
 
     prompt = st.chat_input()
 
@@ -22,36 +152,110 @@ def show_chat_page():
         st.chat_message("user").write(prompt)
         st.session_state["message"].append({"role":"user","content":prompt})
         response_messages = []
-        with st.spinner("智能知识库助手正在思考........."):
+        
+        # 确定使用的模式（去除emoji前缀）
+        clean_selected_mode = selected_mode.replace("🔄 ", "").replace("⚡ ", "").replace("🧠 ", "")
+        if clean_selected_mode == "自动切换模式":
+            detected_mode = detect_task_complexity(prompt)
+            actual_mode = "🧠 LangGraph 工作流模式" if detected_mode == "langgraph" else "⚡ ReactAgent 模式"
+        else:
+            actual_mode = selected_mode
+        
+        # 根据模式切换 Agent
+        if st.session_state.get("agent_mode") != actual_mode:
+            if "ReactAgent" in actual_mode:
+                st.session_state["agent"] = ReactAgent()
+            else:
+                st.session_state["agent"] = LangGraphAgent()
+            st.session_state["agent_mode"] = actual_mode
+        
+        # 显示当前使用的模式
+        st.sidebar.info(f"当前模式: {st.session_state['agent_mode']}")
+        
+        # 创建状态显示区域
+        status_placeholder = st.empty()
+        status_placeholder.info("🤔 正在分析您的问题...")
+        
+        if "ReactAgent" in actual_mode:
+            # ReactAgent 使用流式响应
             res_stream = st.session_state["agent"].execute_stream(prompt)
-
-            def capture(generator,cache_list):
+            
+            def capture_react(generator, cache_list):
+                status_shown = False
                 for chunk in generator:
                     if chunk is None:
                         continue
                     cache_list.append(chunk)
+                    
+                    # 首次输出时更新状态
+                    if not status_shown:
+                        status_placeholder.success("✍️ 正在为您生成回答...")
+                        status_shown = True
+                    
                     if isinstance(chunk, str):
                         for char in chunk:
-                            time.sleep(0.001)
+                            time.sleep(0.008)  # 更自然的打字速度
                             yield char
                     elif isinstance(chunk, dict):
                         content = chunk.get('messages', [{}])[-1].get('content', '')
                         if content:
                             for char in content:
-                                time.sleep(0.001)
+                                time.sleep(0.008)
                                 yield char
                     else:
-                        # Assume message object or other
                         content = getattr(chunk, 'content', str(chunk))
                         for char in content:
-                            time.sleep(0.001)
+                            time.sleep(0.008)
                             yield char
+                
+                # 完成后清除状态
+                status_placeholder.empty()
             
-            st.chat_message("assistant").write_stream(capture(res_stream,response_messages))
-
+            with st.chat_message("assistant"):
+                st.write_stream(capture_react(res_stream, response_messages))
             full_response = "".join(response_messages)
-            st.session_state["message"].append({"role":"assistant","content":full_response})
-            st.rerun()
+        else:
+            # LangGraph 模式使用流式响应
+            res_stream = st.session_state["agent"].run_stream(prompt)
+            
+            def capture_langgraph(generator, cache_list):
+                status_shown = False
+                for chunk in generator:
+                    if chunk is None:
+                        continue
+                    cache_list.append(chunk)
+                    
+                    # 首次输出时更新状态
+                    if not status_shown:
+                        status_placeholder.success("✍️ 正在为您生成回答...")
+                        status_shown = True
+                    
+                    if isinstance(chunk, str):
+                        for char in chunk:
+                            time.sleep(0.008)  # 更自然的打字速度
+                            yield char
+                    else:
+                        content = str(chunk)
+                        for char in content:
+                            time.sleep(0.008)
+                            yield char
+                
+                # 完成后清除状态
+                status_placeholder.empty()
+            
+            with st.chat_message("assistant"):
+                st.write_stream(capture_langgraph(res_stream, response_messages))
+            full_response = "".join(response_messages)
+        
+        # 回答完成后的状态提示
+        if full_response:
+            status_placeholder.success("✅ 回答完成")
+            # 3秒后自动清除状态提示
+            time.sleep(3)
+            status_placeholder.empty()
+        
+        st.session_state["message"].append({"role":"assistant","content":full_response})
+        st.rerun()
 
 
 def show_upload_page():
@@ -357,9 +561,9 @@ def show_upload_page():
 
 def main():
     st.sidebar.title("导航菜单")
-    page = st.sidebar.radio("选择页面", ["智能客服", "知识库管理"])
+    page = st.sidebar.radio("选择页面", ["智能问答助手", "知识库管理"])
 
-    if page == "智能客服":
+    if page == "智能问答助手":
         show_chat_page()
     elif page == "知识库管理":
         show_upload_page()

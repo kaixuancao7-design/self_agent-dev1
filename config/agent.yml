@@ -13,6 +13,9 @@ llm:
   azure_deployment_name: your-deployment
   api_key: ""  # 建议通过环境变量或密钥管理服务设置
 
+# 模型来源配置
+model_source: cloud  # 可选值: cloud（云端Tongyi）, ollama（本地Ollama）, local（本地模型）
+
 # 重试配置
 retry_max_attempts: 3
 retry_backoff_seconds: 2
@@ -40,3 +43,12 @@ user_locations:
 firecrawl:
   api_key: "FIRECRAWL_API_KEY"  # 建议通过环境变量 FIRECRAWL_API_KEY 设置
   base_url: https://api.firecrawl.dev
+
+# LangGraph工作流配置
+langgraph:
+  enabled: true  # 是否启用LangGraph工作流
+  max_steps: 10  # 最大执行步骤
+  checkpoint: false  # 是否启用检查点（用于持久化状态）
+  verbose: true  # 是否输出详细日志
+  auto_switch: true  # 是否自动切换模式
+  complexity_threshold: 50  # 复杂度阈值（字符数），超过此值自动使用LangGraph

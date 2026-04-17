@@ -28,3 +28,11 @@ rerank:
   method: linear  # 可选值: linear, cross_encoder, llm
   cross_encoder_model: BAAI/bge-reranker-base  # Cross-Encoder模型名称
   llm_rerank_prompt: ""  # 自定义LLM重排提示词（可选）
+
+# 缓存配置
+cache:
+  enable_cache: true  # 是否启用查询缓存
+  query_cache_size: 500  # 查询缓存最大条目数
+  query_cache_ttl: 60  # 查询缓存过期时间（分钟）
+  llm_cache_size: 200  # LLM响应缓存最大条目数
+  llm_cache_ttl: 30  # LLM响应缓存过期时间（分钟）

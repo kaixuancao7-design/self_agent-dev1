@@ -188,7 +188,8 @@ python scripts/run_ragas_evaluation.py
 │   │   ├── kb_management/         # 知识库管理技能
 │   │   ├── content_generator/     # 智能内容生成技能
 │   │   ├── document_processor/    # 文档处理技能
-│   │   └── knowledge_governance/  # 知识治理技能
+│   │   ├── knowledge_governance/  # 知识治理技能
+│   │   └── firecrawl/             # Firecrawl网页抓取技能
 │   ├── tools/               # 传统工具模块（细粒度工具）
 │   │   ├── __init__.py            # 工具导出
 │   │   ├── utility_tools.py       # 通用工具+知识库管理
@@ -196,6 +197,7 @@ python scripts/run_ragas_evaluation.py
 │   │   ├── advanced_tools.py      # 高级能力工具（评估）
 │   │   └── search_tools.py        # 网络搜索工具
 │   ├── react_agent.py       # 主 Agent 实现（集成Skills框架）
+│   ├── langgraph_workflow.py # LangGraph工作流引擎
 │   └── session.py           # 会话管理
 ├── model/                   # 统一接口层（Unified API Abstraction）
 │   ├── __init__.py          # 模块导出
@@ -337,6 +339,32 @@ enable_advanced_features: true  # 启用高级能力
 | `fact_check.txt` | 事实核查提示词 |
 
 ## 📋 更新日志
+
+### v1.4.0 (2026-04-17)
+
+**新增功能:**
+- ✅ LangGraph 工作流引擎
+  - 基于 LangGraph 重构 Agent 执行流程
+  - 定义 5 个核心工作流节点：Think、Tool Call、Evaluate、Fact Check、Summarize
+  - 实现状态管理（AgentState），支持消息历史、任务列表、工具结果等
+  - 支持条件分支：根据评估结果决定继续执行或总结
+  - 配置化工作流参数：最大步骤、检查点、详细日志
+
+**工作流架构:**
+```
+用户输入 → Think → [工具调用?] → Tool Call → Evaluate → [继续?] → Summarize → 输出答案
+                                              ↓
+                                         Fact Check
+```
+
+**配置选项:**
+```yaml
+langgraph:
+  enabled: true        # 是否启用LangGraph工作流
+  max_steps: 10        # 最大执行步骤
+  checkpoint: false    # 是否启用检查点（持久化状态）
+  verbose: true        # 是否输出详细日志
+```
 
 ### v1.3.0 (2026-04-16)
 
