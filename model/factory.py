@@ -6,6 +6,7 @@
 - openai: OpenAI原生
 - deepseek: DeepSeek
 - ollama: Ollama本地部署
+- tongyi: 阿里云通义千问
 """
 from typing import Optional
 from model.base import BaseLLM, BaseEmbedding, BaseVisionLLM
@@ -28,7 +29,7 @@ class LLMFactory:
         """
         创建LLM实例
         
-        :param provider: Provider类型 (azure/openai/deepseek/ollama)
+        :param provider: Provider类型 (azure/openai/deepseek/ollama/tongyi)
         :param kwargs: 配置参数
         :return: BaseLLM实例
         """
@@ -42,6 +43,8 @@ class LLMFactory:
             return LLMFactory._create_deepseek(**kwargs)
         elif provider == "ollama":
             return LLMFactory._create_ollama(**kwargs)
+        elif provider == "tongyi":
+            return LLMFactory._create_tongyi(**kwargs)
         else:
             raise ValueError(f"不支持的Provider类型: {provider}")
     
@@ -72,6 +75,13 @@ class LLMFactory:
         from model.providers.ollama_provider import OllamaLLM
         logger.info(f"[LLMFactory] 创建Ollama实例: {model} @ {base_url}")
         return OllamaLLM(model, base_url)
+    
+    @staticmethod
+    def _create_tongyi(model: str = "qwen3-max", **kwargs) -> BaseLLM:
+        """创建Tongyi实例"""
+        from model.providers.tongyi_provider import TongyiLLM
+        logger.info(f"[LLMFactory] 创建Tongyi实例: {model}")
+        return TongyiLLM(model=model)
 
 
 class EmbeddingFactory:
@@ -128,7 +138,7 @@ class EmbeddingFactory:
         return DeepSeekEmbedding(api_key, model)
     
     @staticmethod
-    def _create_ollama(model: str = "all-minilm", base_url: str = "http://localhost:11434", **kwargs) -> BaseEmbedding:
+    def _create_ollama(model: str = "Mxbai-embed-large", base_url: str = "http://localhost:11434", **kwargs) -> BaseEmbedding:
         """创建Ollama Embedding实例"""
         from model.providers.ollama_provider import OllamaEmbedding
         logger.info(f"[EmbeddingFactory] 创建Ollama Embedding实例: {model} @ {base_url}")
@@ -178,55 +188,49 @@ class VisionLLMFactory:
         return OpenAIVisionLLM(api_key, model)
 
 
-# 向后兼容的全局变量
-class CloudChatModelFactory:
-    """云端模型工厂（兼容旧代码）"""
-    def generator(self):
-        from model.providers.tongyi_provider import TongyiLLM
-        model_name = rag_cfg.get("cloud_chat_model_name", "qwen3-max")
-        logger.info(f"[ModelFactory] 初始化云端模型：{model_name}")
-        return TongyiLLM(model=model_name)
+# 全局变量 - 使用统一工厂类创建实例
+def _create_chat_model() -> BaseLLM:
+    """创建聊天模型实例"""
+    llm_config = agent_cfg.get("llm", {})
+    provider = llm_config.get("provider", "azure")
+    model = llm_config.get("model", "gpt-4o")
+    
+    try:
+        if provider == "ollama":
+            base_url = llm_config.get("base_url", "http://localhost:11434")
+            return LLMFactory.create(provider, model=model, base_url=base_url)
+        else:
+            api_key = llm_config.get("api_key", "")
+            endpoint = llm_config.get("azure_endpoint", "")
+            deployment_name = llm_config.get("azure_deployment_name", model)
+            return LLMFactory.create(provider, api_key=api_key, endpoint=endpoint, 
+                                    deployment_name=deployment_name, model=model)
+    except Exception as e:
+        logger.error(f"[LLMFactory] 创建聊天模型失败: {e}")
+        raise
 
 
-class OllamaChatModelFactory:
-    """Ollama模型工厂（兼容旧代码）"""
-    def generator(self):
-        try:
-            from langchain_ollama import ChatOllama
-        except ImportError:
-            logger.warning("[ModelFactory] langchain_ollama 包未安装，尝试使用 langchain_community")
-            from langchain_community.chat_models.ollama import ChatOllama
-
-        model_name = agent_cfg.get("model", "qwen3.5:9b")
-        base_url = agent_cfg.get("base_url", "http://localhost:11434")
-        logger.info(f"[ModelFactory] 初始化本地 Ollama 模型：{model_name} @ {base_url}")
-        return ChatOllama(model=model_name, base_url=base_url)
-
-
-class ChatModelFactory:
-    """聊天模型工厂（兼容旧代码）"""
-    def generator(self):
-        source = str(agent_cfg.get("model_source", "cloud")).strip().lower()
-        if source in ("ollama", "local"):
-            try:
-                return OllamaChatModelFactory().generator()
-            except Exception:
-                if agent_cfg.get("fallback_to_cloud", True):
-                    logger.warning(
-                        "[ModelFactory] 本地 Ollama 模型加载失败，回退到云端模型。"
-                    )
-                    return CloudChatModelFactory().generator()
-                raise
-        return CloudChatModelFactory().generator()
+def _create_embed_model() -> BaseEmbedding:
+    """创建嵌入模型实例"""
+    embedding_config = rag_cfg.get("embedding", {})
+    provider = embedding_config.get("provider", "openai")
+    model = embedding_config.get("model", "text-embedding-3-small")
+    
+    try:
+        if provider == "ollama":
+            base_url = embedding_config.get("base_url", "http://localhost:11434")
+            return EmbeddingFactory.create(provider, model=model, base_url=base_url)
+        else:
+            api_key = embedding_config.get("api_key", "")
+            endpoint = embedding_config.get("azure_endpoint", "")
+            deployment_name = embedding_config.get("azure_deployment_name", model)
+            return EmbeddingFactory.create(provider, api_key=api_key, endpoint=endpoint,
+                                          deployment_name=deployment_name, model=model)
+    except Exception as e:
+        logger.error(f"[EmbeddingFactory] 创建嵌入模型失败: {e}")
+        raise
 
 
-class EmbeddingsFactory:
-    """嵌入模型工厂（兼容旧代码）"""
-    def generator(self):
-        from langchain_community.embeddings import DashScopeEmbeddings
-        return DashScopeEmbeddings(model=rag_cfg["embedding_model_name"])
-
-
-# 全局变量（向后兼容）
-chat_model = ChatModelFactory().generator()
-embed_model = EmbeddingsFactory().generator()
+# 全局变量
+chat_model = _create_chat_model()
+embed_model = _create_embed_model()

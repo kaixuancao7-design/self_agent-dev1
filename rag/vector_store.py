@@ -34,17 +34,23 @@ class VectorStoreService:
     def _select_initial_database(self) -> str:
         """优先使用已有数据库目录，否则使用配置默认数据库名。"""
         existing_dbs = self.list_databases()
-        if not existing_dbs:
+        # 过滤掉不符合命名规范的数据库（长度小于3个字符）
+        valid_dbs = [db for db in existing_dbs if len(db) >= 3]
+        if not valid_dbs:
             return chroma_cfg['collection_name']
-        if chroma_cfg['collection_name'] in existing_dbs:
+        if chroma_cfg['collection_name'] in valid_dbs:
             return chroma_cfg['collection_name']
-        return existing_dbs[0]
+        return valid_dbs[0]
 
     @staticmethod
     def _sanitize_db_name(name: str) -> str:
-        """清理数据库名称，使其符合ChromaDB的要求：只包含[a-zA-Z0-9._-]，以字母或数字开头和结尾"""
+        """清理数据库名称，使其符合ChromaDB的要求：
+        - 只包含[a-zA-Z0-9._-]字符
+        - 以字母或数字开头和结尾
+        - 长度在3-512个字符之间
+        """
         if not name:
-            return name
+            return 'default'
         # 替换空格为下划线
         sanitized = name.replace(' ', '_')
         # 只保留允许的字符
@@ -56,6 +62,15 @@ class VectorStoreService:
         # 如果为空，返回默认
         if not sanitized:
             sanitized = 'default'
+        # 确保长度在3-512字符之间
+        min_length = 3
+        max_length = 512
+        if len(sanitized) < min_length:
+            # 如果太短，添加后缀使其达到最小长度
+            suffix = '_db' if len(sanitized) == 1 else '_d'
+            sanitized = sanitized + suffix
+        if len(sanitized) > max_length:
+            sanitized = sanitized[:max_length]
         return sanitized
 
     def _init_store(self):
@@ -67,6 +82,33 @@ class VectorStoreService:
             persist_directory=persist_dir,
             embedding_function=embed_model
         )
+    
+    def _close_store(self):
+        """关闭向量存储连接，释放文件句柄"""
+        if hasattr(self, 'vectors_store') and self.vectors_store is not None:
+            try:
+                # 先尝试删除 collection（这会清理资源）
+                if hasattr(self.vectors_store, 'delete_collection'):
+                    try:
+                        self.vectors_store.delete_collection()
+                    except Exception as e:
+                        logger.warning(f"[关闭数据库]删除collection失败（可能已不存在）: {e}")
+                
+                # 尝试获取底层数据库连接并关闭
+                if hasattr(self.vectors_store, '_client'):
+                    # 对于 langchain-chroma，_client 是 Chroma 客户端
+                    client = self.vectors_store._client
+                    if hasattr(client, 'close'):
+                        client.close()
+                    elif hasattr(client, '__del__'):
+                        # 如果没有 close 方法，尝试触发垃圾回收
+                        pass
+                
+                # 将向量存储设置为 None 以释放引用
+                self.vectors_store = None
+                logger.info(f"[关闭数据库]成功关闭数据库连接: {self.current_db}")
+            except Exception as e:
+                logger.warning(f"[关闭数据库]关闭连接时发生警告: {e}")
     
     def get_md5_store_path(self) -> str:
         """获取MD5存储文件路径"""
@@ -115,18 +157,22 @@ class VectorStoreService:
         return False
 
     def get_data_categories(self) -> list:
-        """获取 data_path 下的顶级目录作为数据分类源"""
+        """获取所有可用数据库作为数据分类源，确保与Chroma数据库列表同步"""
         data_root = get_abs_path(chroma_cfg['data_path'])
-        if not os.path.isdir(data_root):
-            return []
-        categories = []
-        for entry in os.scandir(data_root):
-            if entry.is_dir() and not self._is_ignored_category(entry.name):
-                categories.append(entry.name)
-
-        if self.get_data_files(self.default_db_name):
-            categories.insert(0, self.default_db_name)
-        return sorted(categories)
+        os.makedirs(data_root, exist_ok=True)
+        
+        # 获取所有Chroma数据库，确保无重复
+        dbs = self.list_databases()
+        
+        # 去重处理，保持顺序
+        dbs = list(dict.fromkeys(dbs))
+        
+        # 确保每个数据库都有对应的data目录，避免数据库存在但数据目录缺失的情况
+        for db_name in dbs:
+            db_data_dir = os.path.join(data_root, db_name)
+            os.makedirs(db_data_dir, exist_ok=True)
+        
+        return sorted(dbs)
 
     def get_data_files(self, category: str | None = None) -> list:
         """获取 data_path 下指定分类或根目录的所有允许文件"""
@@ -417,13 +463,34 @@ class VectorStoreService:
         删除当前知识库数据库
         :return: 删除结果字典
         """
+        import time
+        
         try:
             persist_dir = os.path.join(self.persist_base_dir, self.current_db)
             data_dir = os.path.join(get_abs_path(chroma_cfg['data_path']), self.current_db)
 
-            if os.path.exists(persist_dir):
-                shutil.rmtree(persist_dir)
-                logger.info(f"[删除数据库]成功删除向量库目录: {persist_dir}")
+            # 先关闭数据库连接，释放文件句柄
+            self._close_store()
+            
+            # 等待一小段时间确保文件句柄完全释放
+            time.sleep(0.5)
+            
+            # 尝试删除目录，最多重试3次
+            max_retries = 3
+            retry_delay = 1
+            
+            for attempt in range(max_retries):
+                try:
+                    if os.path.exists(persist_dir):
+                        shutil.rmtree(persist_dir)
+                        logger.info(f"[删除数据库]成功删除向量库目录: {persist_dir}")
+                    break
+                except PermissionError as e:
+                    if attempt < max_retries - 1:
+                        logger.warning(f"[删除数据库]第 {attempt+1} 次删除失败，文件可能被占用，重试中...")
+                        time.sleep(retry_delay)
+                    else:
+                        raise e
 
             if os.path.exists(data_dir):
                 shutil.rmtree(data_dir)
@@ -488,6 +555,8 @@ class VectorStoreService:
                 item_path = os.path.join(persist_base_dir, item)
                 if os.path.isdir(item_path):
                     db_list.append(item)
+        # 去重处理，保持顺序
+        db_list = list(dict.fromkeys(db_list))
         return sorted(db_list)
     
     def create_database(self, db_name: str) -> dict:

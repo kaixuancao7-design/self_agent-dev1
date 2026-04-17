@@ -5,16 +5,13 @@ external_data_path: data\external\records.csv
 
 # LLM配置
 llm:
-  provider: ollama  # 可选值: azure, openai, deepseek, ollama
+  provider: ollama  # 可选值: azure, openai, deepseek, ollama, tongyi
   model: qwen3.5:9b
   base_url: http://localhost:11434
   # Azure OpenAI配置
   azure_endpoint: https://your-resource.openai.azure.com/
   azure_deployment_name: your-deployment
   api_key: ""  # 建议通过环境变量或密钥管理服务设置
-
-# 模型来源配置
-model_source: cloud  # 可选值: cloud（云端Tongyi）, ollama（本地Ollama）, local（本地模型）
 
 # 重试配置
 retry_max_attempts: 3

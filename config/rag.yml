@@ -6,7 +6,7 @@ cloud_chat_model_name: qwen3-max
 # Embedding配置
 embedding:
   provider: ollama  # 可选值: azure, openai, deepseek, ollama
-  model: all-minilm
+  model: Mxbai-embed-large
   base_url: http://localhost:11434
   # Azure OpenAI配置
   azure_endpoint: https://your-resource.openai.azure.com/
