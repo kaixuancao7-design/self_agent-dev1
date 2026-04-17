@@ -105,6 +105,10 @@
 | **DeepSeek** | 成本优化、特定语言优化 | `provider: deepseek` |
 | **Ollama/vLLM** | 完全离线、隐私敏感、无API成本 | `provider: ollama` |
 
+**推荐模型配置:**
+- **LLM**: `qwen3.5:9b`（Ollama）
+- **Embedding**: `Mxbai-embed-large`（Ollama，支持1024维度向量）
+
 **工厂模式:**
 - `LLMFactory.create(provider, **kwargs)` - 创建LLM实例
 - `EmbeddingFactory.create(provider, **kwargs)` - 创建Embedding实例
@@ -339,6 +343,22 @@ enable_advanced_features: true  # 启用高级能力
 | `fact_check.txt` | 事实核查提示词 |
 
 ## 📋 更新日志
+
+### v1.4.1 (2026-04-17)
+
+**修复问题:**
+- ✅ 修复 `OllamaEmbedding` 缺少 `embed_query` 方法的问题
+- ✅ 将默认 Embedding 模型从 `all-minilm` 改为 `Mxbai-embed-large`（支持1024维度）
+- ✅ 修复数据库名称命名规范问题（确保3-512字符）
+- ✅ 修复删除数据库时文件被占用问题（添加连接关闭和重试机制）
+- ✅ 修复 `DuplicateWidgetID` 错误（添加数据库列表去重）
+- ✅ 添加 `README.md` 到 `.gitignore`
+
+**优化改进:**
+- ✅ 添加 `_close_store()` 方法释放数据库连接
+- ✅ 在 `delete_database()` 中添加连接关闭和重试逻辑
+- ✅ 更新 `_sanitize_db_name()` 方法支持长度校验
+- ✅ 更新 `_select_initial_database()` 过滤无效数据库名称
 
 ### v1.4.0 (2026-04-17)
 
