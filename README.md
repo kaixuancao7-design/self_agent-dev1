@@ -216,83 +216,248 @@ python scripts/run_ragas_evaluation.py
 ```
 ├── agent/                    # Agent 核心模块
 │   ├── modules/             # 高级能力模块
-│   │   ├── task_decomposer.py      # 任务拆解
-│   │   ├── path_planner.py        # 路径规划
-│   │   ├── self_evaluator.py      # 自我评估
-│   │   ├── fact_checker.py        # 事实核查
-│   │   ├── dynamic_adjuster.py    # 动态调整
-│   │   ├── memory_manager.py      # 记忆管理（短期+长期记忆）
-│   │   └── intent_recognizer.py   # 意图识别
 │   ├── skills/              # Skills 框架（Anthropic 标准）
-│   │   ├── __init__.py            # 技能导出
-│   │   ├── skill_loader.py        # 技能加载器（自动发现/加载）
-│   │   ├── rag_summarize/         # RAG检索技能
-│   │   │   ├── SKILL.md           # 技能说明文档
-│   │   │   ├── reference/         # 参考文档
-│   │   │   └── script/main.py     # 可执行脚本
-│   │   ├── web_search/            # 网络搜索技能
-│   │   ├── get_weather/           # 天气查询技能
-│   │   ├── task_decompose/        # 任务拆解技能
-│   │   ├── fact_check/            # 事实核查技能
-│   │   ├── kb_management/         # 知识库管理技能
-│   │   ├── content_generator/     # 智能内容生成技能
-│   │   ├── document_processor/    # 文档处理技能
-│   │   ├── knowledge_governance/  # 知识治理技能
-│   │   └── firecrawl/             # Firecrawl网页抓取技能
-│   ├── tools/               # 传统工具模块（细粒度工具）
-│   │   ├── __init__.py            # 工具导出
-│   │   ├── utility_tools.py       # 通用工具+知识库管理
-│   │   ├── report_tools.py        # 报告工具
-│   │   ├── advanced_tools.py      # 高级能力工具（评估）
-│   │   └── search_tools.py        # 网络搜索工具
-│   ├── react_agent.py       # 主 Agent 实现（集成Skills框架）
+│   ├── tools/               # 传统工具模块
+│   ├── react_agent.py       # 主 Agent 实现
 │   ├── langgraph_workflow.py # LangGraph工作流引擎
 │   └── session.py           # 会话管理
-├── model/                   # 统一接口层（Unified API Abstraction）
-│   ├── __init__.py          # 模块导出
-│   ├── base.py              # 抽象基类（BaseLLM、BaseEmbedding、BaseVisionLLM）
-│   ├── factory.py           # 工厂类（LLMFactory、EmbeddingFactory、VisionLLMFactory）
+├── model/                   # 统一接口层
+│   ├── base.py              # 抽象基类
+│   ├── factory.py           # 工厂类
 │   └── providers/           # Provider实现
-│       ├── __init__.py              # Provider导出
-│       ├── azure_provider.py        # Azure OpenAI实现
-│       ├── openai_provider.py       # OpenAI原生实现
-│       ├── deepseek_provider.py     # DeepSeek实现
-│       └── ollama_provider.py       # Ollama本地实现
 ├── rag/                     # RAG 检索服务
-│   ├── vector_store.py      # 向量存储（含空Chunk过滤、大文件分块、Chroma缓存）
-│   ├── bm25_index.py        # BM25 索引
-│   ├── hybrid_retriever.py  # 混合检索（Query Processing、RRF Fusion、权重可配置）
-│   ├── reranker.py          # 重排器（Linear/Cross-Encoder/LLM）
-│   ├── ragas_evaluator.py   # Ragas 量化评估器
-│   ├── image_index.py       # 图片索引
-│   └── rag_service.py       # RAG 服务
 ├── backend/                 # FastAPI 后端服务
-│   ├── __init__.py          # 模块导出
-│   ├── main.py              # FastAPI应用入口
-│   ├── database.py          # 数据库模型（用户表、会话表）
-│   ├── async_providers.py   # 异步Provider封装
-│   └── tasks.py             # Celery任务定义
 ├── scripts/                 # 运行脚本
-│   └── run_ragas_evaluation.py  # Ragas 评估脚本
 ├── config/                  # 配置文件
-│   ├── agent.yml            # Agent 配置
-│   ├── chroma.yml           # Chroma 向量数据库配置
-│   ├── rag.yml              # RAG 配置（含混合检索权重）
-│   └── prompts.yml          # 提示词配置
 ├── prompts/                 # 提示词文件
-│   ├── main_prompt.txt      # 主提示词
-│   ├── rag_summarize.txt    # RAG总结提示词
-│   ├── report_prompt.txt    # 报告生成提示词
-│   ├── task_decompose.txt   # 任务拆解提示词
-│   ├── self_evaluation.txt  # 自我评估提示词
-│   └── fact_check.txt       # 事实核查提示词
-├── chromadb/                # Chroma 向量数据库（按数据库名组织）
-├── data/                    # 数据文件（按数据库名组织）
+├── chromadb/                # Chroma 向量数据库
+├── data/                    # 数据文件
 ├── utils/                   # 工具函数
 ├── test/                    # 测试文件
-│   └── test_skills_framework.py  # Skills框架测试
 └── app.py                   # Streamlit 应用入口
 ```
+
+## 📦 主要模块详解
+
+### 1. Agent 核心模块 (`agent/`)
+
+Agent 模块是系统的核心，负责实现智能问答逻辑和高级能力。
+
+#### 1.1 高级能力模块 (`agent/modules/`)
+
+| 文件 | 功能 | 说明 |
+|------|------|------|
+| `task_decomposer.py` | 任务拆解 | 将复杂问题分解为多个可执行的子任务 |
+| `path_planner.py` | 路径规划 | 为子任务排序，确定执行顺序和逻辑 |
+| `self_evaluator.py` | 自我评估 | 评估每步执行结果的质量 |
+| `fact_checker.py` | 事实核查 | 验证答案与参考文档的一致性 |
+| `dynamic_adjuster.py` | 动态调整 | 处理失败后自动调整策略 |
+| `memory_manager.py` | 记忆管理 | 管理短期和长期记忆 |
+| `intent_recognizer.py` | 意图识别 | 识别用户意图类型 |
+
+**工作流程:**
+```
+用户输入 → 意图识别 → [简单问题: 直接检索]
+                   → [复杂问题: 任务拆解 → 路径规划 → 执行 → 评估 → 总结]
+```
+
+#### 1.2 Skills 框架 (`agent/skills/`)
+
+基于 Anthropic Skills 标准构建，每个技能包含：
+- **SKILL.md**: 技能说明文档
+- **reference/**: 详细参考文档
+- **script/main.py**: 可执行脚本
+
+**核心技能:**
+| 技能 | 功能 |
+|------|------|
+| `rag_summarize` | 知识库语义检索和总结 |
+| `web_search` | 实时网络搜索 |
+| `task_decompose` | 任务拆解 |
+| `fact_check` | 事实核查 |
+| `kb_management` | 知识库管理 |
+
+**SkillLoader 自动加载机制:**
+- 自动扫描 `agent/skills/` 目录
+- 发现新技能并自动注册
+- 支持技能失败降级（FallbackSkill）
+
+#### 1.3 LangGraph 工作流引擎 (`agent/langgraph_workflow.py`)
+
+基于 LangGraph 重构的 Agent 执行流程，核心特性：
+
+| 特性 | 说明 |
+|------|------|
+| **状态管理** | AgentState 管理消息历史、任务列表、工具结果 |
+| **最大步数限制** | 默认10步，防止死循环 |
+| **异常捕获** | 捕获并处理执行过程中的异常 |
+| **失败重试** | 支持失败重试机制 |
+| **状态持久化** | 支持本地文件和数据库两种方式 |
+
+**核心节点:**
+```
+Think → Tool Call → Evaluate → Fact Check → Summarize
+```
+
+### 2. 统一接口层 (`model/`)
+
+提供统一的 LLM 和 Embedding 调用接口，屏蔽不同 Provider 的实现差异。
+
+#### 2.1 抽象基类 (`model/base.py`)
+
+| 抽象类 | 核心方法 | 说明 |
+|--------|----------|------|
+| `BaseLLM` | `chat()`, `generate()`, `chat_stream()` | 大语言模型抽象 |
+| `BaseEmbedding` | `embed()`, `embed_single()` | 向量嵌入抽象 |
+| `BaseVisionLLM` | `chat_with_image()` | 视觉模型抽象 |
+
+#### 2.2 工厂类 (`model/factory.py`)
+
+采用工厂模式创建模型实例：
+
+```python
+# 创建LLM实例
+llm = LLMFactory.create("ollama", model="qwen3.5:9b")
+
+# 创建Embedding实例
+embedding = EmbeddingFactory.create("ollama", model="Mxbai-embed-large")
+```
+
+#### 2.3 Provider 实现 (`model/providers/`)
+
+| Provider | 文件 | 说明 |
+|----------|------|------|
+| Azure OpenAI | `azure_provider.py` | 企业级部署 |
+| OpenAI | `openai_provider.py` | 原生API |
+| DeepSeek | `deepseek_provider.py` | 低成本方案 |
+| Ollama | `ollama_provider.py` | 本地部署 |
+
+### 3. RAG 检索服务 (`rag/`)
+
+实现混合检索策略，提升知识库检索效果。
+
+#### 3.1 核心组件
+
+| 文件 | 功能 | 说明 |
+|------|------|------|
+| `vector_store.py` | 向量存储 | Chroma向量数据库封装，含空Chunk过滤、大文件分块、缓存机制 |
+| `bm25_index.py` | BM25索引 | 关键词检索 |
+| `hybrid_retriever.py` | 混合检索 | BM25+向量融合，支持RRF算法 |
+| `reranker.py` | 重排器 | Linear/Cross-Encoder/LLM三种策略 |
+| `ragas_evaluator.py` | 量化评估 | Ragas风格评估指标 |
+
+#### 3.2 检索流程
+
+```
+Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Reranking → Top-K Results
+```
+
+**混合检索权重配置:**
+```yaml
+retrieval:
+  bm25_weight: 0.5      # BM25检索权重
+  vector_weight: 0.5    # 向量检索权重
+  hybrid_weight: 0.5    # 混合权重
+  rrf_k: 60             # RRF融合参数
+```
+
+#### 3.3 优化特性
+
+| 特性 | 说明 |
+|------|------|
+| **空Chunk过滤** | 过滤长度<10的分块，提升检索质量 |
+| **大文件分块** | 根据文件大小动态调整chunk_size |
+| **Chroma缓存** | 提高检索性能 |
+| **权重可配置** | BM25/向量/RRF权重均可调整 |
+
+### 4. FastAPI 后端服务 (`backend/`)
+
+提供 RESTful API 接口，支持多用户会话隔离。
+
+#### 4.1 项目结构
+
+| 文件 | 功能 | 说明 |
+|------|------|------|
+| `main.py` | 应用入口 | FastAPI配置和路由定义 |
+| `database.py` | 数据库模型 | 用户表、会话表定义 |
+| `async_providers.py` | 异步封装 | 异步LLM和Embedding调用 |
+| `tasks.py` | Celery任务 | 处理长任务（大文件解析等） |
+
+#### 4.2 数据库模型
+
+**用户表 (users):**
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| username | VARCHAR | 用户名（唯一） |
+| email | VARCHAR | 邮箱 |
+| created_at | DATETIME | 创建时间 |
+
+**会话表 (sessions):**
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | UUID | 主键 |
+| user_id | UUID | 用户ID（外键） |
+| name | VARCHAR | 会话名称 |
+| created_at | DATETIME | 创建时间 |
+
+#### 4.3 API 示例
+
+**创建用户:**
+```bash
+curl -X POST http://localhost:8000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "email": "test@example.com"}'
+```
+
+**创建会话:**
+```bash
+curl -X POST http://localhost:8000/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "user-uuid", "name": "我的会话"}'
+```
+
+**聊天:**
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "session-uuid", "message": "你好"}'
+```
+
+### 5. 配置系统 (`config/`)
+
+集中管理系统配置，支持 YAML 格式。
+
+| 文件 | 说明 |
+|------|------|
+| `agent.yml` | Agent配置（模型、高级能力开关） |
+| `chroma.yml` | Chroma向量数据库配置 |
+| `rag.yml` | RAG检索配置（权重、重排策略） |
+| `prompts.yml` | 提示词配置 |
+
+**配置加载流程:**
+```
+启动 → 加载config/*.yml → 解析配置 → 初始化组件
+```
+
+### 6. 提示词系统 (`prompts/`)
+
+管理所有提示词文件，支持动态加载。
+
+| 文件 | 用途 |
+|------|------|
+| `main_prompt.txt` | 主提示词，定义Agent行为 |
+| `rag_summarize.txt` | RAG总结提示词 |
+| `report_prompt.txt` | 报告生成提示词 |
+| `task_decompose.txt` | 任务拆解提示词 |
+| `self_evaluation.txt` | 自我评估提示词 |
+| `fact_check.txt` | 事实核查提示词 |
+
+**提示词设计原则:**
+- 清晰的角色定义
+- 明确的任务指令
+- 结构化的输出格式
+- 容错能力
 
 ## 🚀 快速开始
 
