@@ -237,6 +237,249 @@ python scripts/run_ragas_evaluation.py
 └── app.py                   # Streamlit 应用入口
 ```
 
+## 🏗️ 整体架构设计
+
+### 架构总览
+
+系统采用 **模块化、分层架构** 设计，基于 LangChain + LangGraph 构建，支持多Provider切换、混合检索、多用户会话隔离等核心能力。
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│                         应用层 (Application Layer)                      │
+│  ┌──────────────┐    ┌──────────────────────┐    ┌──────────────────┐  │
+│  │ Streamlit    │    │      FastAPI API     │    │   Celery Tasks   │  │
+│  │   前端界面   │    │      后端接口层       │    │    任务队列      │  │
+│  └──────┬───────┘    └──────────┬───────────┘    └────────┬─────────┘  │
+└─────────┼────────────────────────┼─────────────────────────┼───────────┘
+          │                        │                         │
+┌─────────▼────────────────────────▼─────────────────────────▼───────────┐
+│                        业务逻辑层 (Business Logic Layer)                 │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │                      ReactAgent / LangGraph                      │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │  │
+│  │  │ 意图识别 │→│任务拆解  │→│路径规划  │→│ 执行/评估│→│ 事实核查  │ │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ └──────────┘  │
+│  │                              │                                     │
+│  │                    ┌─────────▼─────────┐                           │
+│  │                    │   Skills 框架     │                           │
+│  │                    │ (自动加载/降级)   │                           │
+│  │                    └───────────────────┘                           │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+                                          │
+┌──────────────────────────────────────────▼──────────────────────────────┐
+│                       数据层 (Data Layer)                               │
+│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐             │
+│  │   Chroma     │    │   SQLite     │    │   Cache      │             │
+│  │  向量数据库   │    │  用户/会话表  │    │   缓存层     │             │
+│  └──────────────┘    └──────────────┘    └──────────────┘             │
+└─────────────────────────────────────────────────────────────────────────┘
+                                          │
+┌──────────────────────────────────────────▼──────────────────────────────┐
+│                      模型层 (Model Layer)                               │
+│  ┌──────────────────────────────────────────────────────────────────┐  │
+│  │              Unified API Abstraction (统一接口层)                 │  │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐           │  │
+│  │  │  Ollama  │ │ OpenAI   │ │  Azure   │ │ DeepSeek │           │  │
+│  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │  │
+│  └──────────────────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### 模块职责划分
+
+| 层级 | 模块 | 职责描述 |
+|------|------|----------|
+| **应用层** | Streamlit | 可视化前端界面，提供用户交互 |
+| | FastAPI | RESTful API 接口，支持外部调用 |
+| | Celery | 异步任务队列，处理长任务 |
+| **业务逻辑层** | ReactAgent | 主Agent实现，集成工具调用 |
+| | LangGraph | 工作流引擎，管理执行流程 |
+| | Skills 框架 | 技能自动加载与失败降级 |
+| | 高级能力模块 | 任务拆解、路径规划、自我评估等 |
+| | 记忆管理 | 短期记忆+长期记忆 |
+| **数据层** | Chroma | 向量数据库，存储文档嵌入 |
+| | SQLite | 用户表、会话表 |
+| | Cache | 检索结果缓存 |
+| **模型层** | Unified API | 统一LLM/Embedding调用接口 |
+
+### 核心数据流
+
+#### 问答流程
+
+```
+用户输入 → 意图识别 → [简单问题] → RAG检索 → 直接回答
+                         ↓
+                    [复杂问题] → 任务拆解 → 路径规划 → 分步执行 → 结果整合 → 事实核查 → 回答
+```
+
+#### 检索流程
+
+```
+Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Reranking → Top-K Results
+         ↓                    ↓
+    同义词扩展          BM25 + 向量检索
+```
+
+#### 文件上传流程
+
+```
+文件上传 → 临时存储 → 文档解析 → 分块处理 → 空Chunk过滤 → 向量嵌入 → 存储到Chroma
+                                                   ↓
+                                           记录到SQLite
+```
+
+### 关键设计模式
+
+#### 工厂模式（Factory Pattern）
+
+用于创建不同Provider的模型实例：
+
+```python
+# model/factory.py
+class LLMFactory:
+    @staticmethod
+    def create(provider, **kwargs):
+        if provider == "ollama":
+            return OllamaProvider(**kwargs)
+        elif provider == "openai":
+            return OpenAIProvider(**kwargs)
+```
+
+**优点**：屏蔽底层实现差异，支持运行时切换Provider，符合开闭原则。
+
+#### 策略模式（Strategy Pattern）
+
+用于重排策略的切换：
+
+```python
+# rag/reranker.py
+class RerankerFactory:
+    @staticmethod
+    def create(method):
+        if method == "linear":
+            return LinearReranker()
+        elif method == "cross_encoder":
+            return CrossEncoderReranker()
+        elif method == "llm":
+            return LLMReranker()
+```
+
+#### 代理模式（Proxy Pattern）
+
+用于缓存和重试逻辑：
+
+```python
+# 缓存代理
+def retrieve_docs(query):
+    if cache_enabled:
+        cached = cache_service.get(query)
+        if cached:
+            return cached
+    result = actual_retrieve(query)
+    cache_service.set(query, result)
+    return result
+```
+
+#### 状态模式（State Pattern）
+
+LangGraph工作流中使用状态机管理执行流程：
+
+```python
+# agent/langgraph_workflow.py
+class AgentState(TypedDict):
+    messages: List[Dict[str, Any]]
+    step_count: int = 0
+    retry_count: int = 0
+    is_finished: bool = False
+```
+
+### 技术栈
+
+| 分类 | 技术 | 版本 | 用途 |
+|------|------|------|------|
+| **框架** | LangChain | 0.1.x | Agent框架 |
+| | LangGraph | 0.1.x | 工作流引擎 |
+| | FastAPI | 0.100+ | 后端API |
+| | Streamlit | 1.30+ | 前端界面 |
+| **数据库** | Chroma | 0.4+ | 向量数据库 |
+| | SQLite | 内置 | 用户/会话存储 |
+| **模型** | Ollama | 0.1.x | 本地LLM |
+| | OpenAI/Azure | API | 云端LLM |
+| **异步** | Celery | 5.3+ | 任务队列 |
+| **工具** | Firecrawl | API | 网页抓取 |
+
+### 关键特性
+
+#### 多用户会话隔离
+
+```
+用户A ──→ 会话A1 ──→ 数据A
+        └─→ 会话A2 ──→ 数据A
+        
+用户B ──→ 会话B1 ──→ 数据B
+        └─→ 会话B2 ──→ 数据B
+```
+
+- 用户表 + 会话表设计
+- 会话数据独立存储
+- 状态持久化支持
+
+#### 异步架构
+
+| 特性 | 实现方式 |
+|------|----------|
+| 异步数据库操作 | SQLAlchemy Async |
+| 异步LLM调用 | aiohttp |
+| 长任务处理 | Celery + Redis |
+
+#### 可配置性
+
+- **模型Provider**：可配置切换（Ollama/OpenAI/Azure/DeepSeek）
+- **检索权重**：BM25/向量/RRF权重可配置
+- **重排策略**：Linear/Cross-Encoder/LLM可配置
+- **工作流参数**：最大步数、检查点、日志级别可配置
+
+### 安全性与可靠性
+
+#### 安全措施
+
+| 措施 | 说明 |
+|------|------|
+| **输入验证** | 所有API输入进行校验 |
+| **SQL注入防护** | 使用ORM参数化查询 |
+| **日志脱敏** | 敏感信息不记录 |
+| **API密钥管理** | 环境变量存储 |
+
+#### 可靠性保障
+
+| 措施 | 说明 |
+|------|------|
+| **失败重试** | 模型调用失败自动重试 |
+| **技能降级** | 技能失败时返回友好提示 |
+| **超时处理** | 请求超时限制 |
+| **最大步数限制** | 防止LangGraph死循环 |
+
+### 扩展性设计
+
+#### 添加新技能
+
+1. 在 `agent/skills/` 创建技能目录
+2. 创建 `SKILL.md`、`reference/`、`script/main.py`
+3. SkillLoader 自动发现并加载
+
+#### 添加新Provider
+
+1. 在 `model/providers/` 创建Provider实现
+2. 在 `model/factory.py` 注册
+3. 在配置文件中添加provider选项
+
+#### 添加新工具
+
+1. 在 `agent/tools/` 创建工具模块
+2. 在 `__init__.py` 导出
+3. 在 `react_agent.py` 中注册
+
 ## 📦 主要模块详解
 
 ### 1. Agent 核心模块 (`agent/`)
