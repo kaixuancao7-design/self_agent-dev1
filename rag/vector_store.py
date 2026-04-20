@@ -1,5 +1,5 @@
 from langchain_chroma import Chroma
-from utils.config_handler import chroma_cfg
+from utils.config_handler import chroma_cfg, rag_cfg
 from model.factory import embed_model
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from utils.file_handler import get_file_md5_hex, listdir_with_allowed_types, load_file_content, SUPPORTED_FILE_TYPES
@@ -7,15 +7,110 @@ import os
 import shutil
 import json
 import re
+import time
 from datetime import datetime
+from typing import Dict, List, Any, Optional, Tuple
 from utils.path_tool import get_abs_path
 from utils.logger_handler import logger
 
+# 缓存管理器
+class ChromaCacheManager:
+    """Chroma缓存管理器"""
+    
+    def __init__(self, persist_base_dir: str):
+        self.persist_base_dir = persist_base_dir
+        self.cache_dir = os.path.join(persist_base_dir, "_cache")
+        os.makedirs(self.cache_dir, exist_ok=True)
+        self.query_cache = {}
+        self._load_cache()
+    
+    def _get_cache_path(self, db_name: str) -> str:
+        return os.path.join(self.cache_dir, f"{db_name}_cache.json")
+    
+    def _load_cache(self):
+        """加载缓存数据"""
+        try:
+            for item in os.listdir(self.cache_dir):
+                if item.endswith("_cache.json"):
+                    db_name = item.replace("_cache.json", "")
+                    cache_path = self._get_cache_path(db_name)
+                    if os.path.exists(cache_path):
+                        try:
+                            with open(cache_path, 'r', encoding='utf-8') as f:
+                                self.query_cache[db_name] = json.load(f)
+                        except Exception as e:
+                            logger.warning(f"[缓存加载]加载缓存失败 {db_name}: {e}")
+        except Exception as e:
+            logger.warning(f"[缓存加载]初始化缓存失败: {e}")
+    
+    def _save_cache(self, db_name: str):
+        """保存缓存数据"""
+        try:
+            cache_path = self._get_cache_path(db_name)
+            with open(cache_path, 'w', encoding='utf-8') as f:
+                json.dump(self.query_cache.get(db_name, {}), f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            logger.warning(f"[缓存保存]保存缓存失败 {db_name}: {e}")
+    
+    def get_cache(self, db_name: str, query: str) -> Optional[List[Any]]:
+        """获取查询缓存"""
+        cache = self.query_cache.get(db_name, {})
+        item = cache.get(query)
+        if item:
+            # 检查是否过期（TTL 5分钟）
+            if time.time() - item.get('timestamp', 0) < 300:
+                return item.get('results')
+            else:
+                # 过期则删除
+                del cache[query]
+                self._save_cache(db_name)
+        return None
+    
+    def set_cache(self, db_name: str, query: str, results: List[Any]):
+        """设置查询缓存"""
+        if db_name not in self.query_cache:
+            self.query_cache[db_name] = {}
+        
+        # 限制缓存大小（最多100条）
+        cache = self.query_cache[db_name]
+        if len(cache) >= 100:
+            # 删除最旧的缓存
+            oldest_key = min(cache.keys(), key=lambda k: cache[k].get('timestamp', 0))
+            del cache[oldest_key]
+        
+        cache[query] = {
+            'timestamp': time.time(),
+            'results': results
+        }
+        self._save_cache(db_name)
+    
+    def clear_cache(self, db_name: str = None):
+        """清除缓存"""
+        if db_name:
+            self.query_cache[db_name] = {}
+            cache_path = self._get_cache_path(db_name)
+            if os.path.exists(cache_path):
+                os.remove(cache_path)
+        else:
+            self.query_cache = {}
+            for item in os.listdir(self.cache_dir):
+                if item.endswith("_cache.json"):
+                    os.remove(os.path.join(self.cache_dir, item))
+
+
 class VectorStoreService:
+    # 全局缓存管理器
+    _cache_manager = None
+    
     def __init__(self, db_name: str = None):
         self.persist_base_dir = get_abs_path(chroma_cfg['persist_directory'])
         self.default_db_name = chroma_cfg.get('default_database_name', 'default')
         self.current_db = VectorStoreService._sanitize_db_name(db_name) if db_name else self._select_initial_database()
+        
+        # 初始化缓存管理器
+        if VectorStoreService._cache_manager is None:
+            VectorStoreService._cache_manager = ChromaCacheManager(self.persist_base_dir)
+        self.cache_manager = VectorStoreService._cache_manager
         
         # 清理分隔符配置，移除空字符串以防止切分产生空chunk
         separators = chroma_cfg['separators']
@@ -23,18 +118,18 @@ class VectorStoreService:
             separators = [s for s in separators if s != ""]
             logger.warning(f"[配置检查] 移除了分隔符列表中的空字符串")
         
+        # 根据文件大小动态调整分块参数
         self.splitter = RecursiveCharacterTextSplitter(
             chunk_size=chroma_cfg['chunk_size'], 
             chunk_overlap=chroma_cfg['chunk_overlap'],
             separators=separators,
             length_function=len
-            )
+        )
         self._init_store()
     
     def _select_initial_database(self) -> str:
         """优先使用已有数据库目录，否则使用配置默认数据库名。"""
         existing_dbs = self.list_databases()
-        # 过滤掉不符合命名规范的数据库（长度小于3个字符）
         valid_dbs = [db for db in existing_dbs if len(db) >= 3]
         if not valid_dbs:
             return chroma_cfg['collection_name']
@@ -44,29 +139,17 @@ class VectorStoreService:
 
     @staticmethod
     def _sanitize_db_name(name: str) -> str:
-        """清理数据库名称，使其符合ChromaDB的要求：
-        - 只包含[a-zA-Z0-9._-]字符
-        - 以字母或数字开头和结尾
-        - 长度在3-512个字符之间
-        """
+        """清理数据库名称，使其符合ChromaDB的要求"""
         if not name:
             return 'default'
-        # 替换空格为下划线
         sanitized = name.replace(' ', '_')
-        # 只保留允许的字符
         sanitized = re.sub(r'[^a-zA-Z0-9._-]', '', sanitized)
-        # 确保以字母或数字开头
         sanitized = re.sub(r'^[^a-zA-Z0-9]+', '', sanitized)
-        # 确保以字母或数字结尾
         sanitized = re.sub(r'[^a-zA-Z0-9]+$', '', sanitized)
-        # 如果为空，返回默认
         if not sanitized:
             sanitized = 'default'
-        # 确保长度在3-512字符之间
-        min_length = 3
-        max_length = 512
+        min_length, max_length = 3, 512
         if len(sanitized) < min_length:
-            # 如果太短，添加后缀使其达到最小长度
             suffix = '_db' if len(sanitized) == 1 else '_d'
             sanitized = sanitized + suffix
         if len(sanitized) > max_length:
@@ -87,39 +170,52 @@ class VectorStoreService:
         """关闭向量存储连接，释放文件句柄"""
         if hasattr(self, 'vectors_store') and self.vectors_store is not None:
             try:
-                # 先尝试删除 collection（这会清理资源）
                 if hasattr(self.vectors_store, 'delete_collection'):
                     try:
                         self.vectors_store.delete_collection()
                     except Exception as e:
                         logger.warning(f"[关闭数据库]删除collection失败（可能已不存在）: {e}")
                 
-                # 尝试获取底层数据库连接并关闭
                 if hasattr(self.vectors_store, '_client'):
-                    # 对于 langchain-chroma，_client 是 Chroma 客户端
                     client = self.vectors_store._client
                     if hasattr(client, 'close'):
                         client.close()
-                    elif hasattr(client, '__del__'):
-                        # 如果没有 close 方法，尝试触发垃圾回收
-                        pass
                 
-                # 将向量存储设置为 None 以释放引用
                 self.vectors_store = None
                 logger.info(f"[关闭数据库]成功关闭数据库连接: {self.current_db}")
             except Exception as e:
                 logger.warning(f"[关闭数据库]关闭连接时发生警告: {e}")
     
+    def _get_splitter_for_file(self, file_size: int) -> RecursiveCharacterTextSplitter:
+        """根据文件大小获取合适的分块器"""
+        # 默认配置
+        chunk_size = chroma_cfg['chunk_size']
+        chunk_overlap = chroma_cfg['chunk_overlap']
+        
+        # 大文件优化：文件越大，chunk越大，重叠越小
+        if file_size > 10 * 1024 * 1024:  # >10MB
+            chunk_size = min(chunk_size * 2, 2048)
+            chunk_overlap = max(chunk_overlap // 2, 32)
+            logger.info(f"[文件分块]大文件优化: chunk_size={chunk_size}, chunk_overlap={chunk_overlap}")
+        elif file_size > 1 * 1024 * 1024:  # >1MB
+            chunk_size = min(chunk_size * 1.5, 1024)
+            chunk_overlap = max(chunk_overlap // 1.5, 48)
+            logger.info(f"[文件分块]中文件优化: chunk_size={chunk_size}, chunk_overlap={chunk_overlap}")
+        
+        return RecursiveCharacterTextSplitter(
+            chunk_size=int(chunk_size),
+            chunk_overlap=int(chunk_overlap),
+            separators=chroma_cfg['separators'],
+            length_function=len
+        )
+
     def get_md5_store_path(self) -> str:
-        """获取MD5存储文件路径"""
         return os.path.join(self.persist_base_dir, self.current_db, "md5.txt")
 
     def get_metadata_path(self) -> str:
-        """获取文件元数据存储路径"""
         return os.path.join(self.persist_base_dir, self.current_db, "file_records.json")
 
     def load_file_metadata(self) -> dict:
-        """加载当前数据库的文件元数据"""
         metadata_path = self.get_metadata_path()
         if not os.path.exists(metadata_path):
             return {}
@@ -131,7 +227,6 @@ class VectorStoreService:
             return {}
 
     def save_file_metadata(self, md5_hex: str, file_name: str, chunks: int) -> None:
-        """保存文件元数据"""
         metadata = self.load_file_metadata()
         metadata[md5_hex] = {
             "md5": md5_hex,
@@ -146,10 +241,9 @@ class VectorStoreService:
             logger.error(f"[文件元数据]保存失败：{exc}")
 
     def get_retriever(self):
-        return self.vectors_store.as_retriever(search_kwargs={"k": chroma_cfg['k']})
+        return self.vectors_store.as_retriever(search_kwargs={"k": rag_cfg['retrieval']['top_k']})
 
     def _is_ignored_category(self, name: str) -> bool:
-        """判断目录名是否为系统级或 UUID 类别，应该屏蔽在页面中。"""
         if name.startswith('.') or name.startswith('_'):
             return True
         if re.fullmatch(r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', name):
@@ -157,25 +251,16 @@ class VectorStoreService:
         return False
 
     def get_data_categories(self) -> list:
-        """获取所有可用数据库作为数据分类源，确保与Chroma数据库列表同步"""
         data_root = get_abs_path(chroma_cfg['data_path'])
         os.makedirs(data_root, exist_ok=True)
-        
-        # 获取所有Chroma数据库，确保无重复
         dbs = self.list_databases()
-        
-        # 去重处理，保持顺序
         dbs = list(dict.fromkeys(dbs))
-        
-        # 确保每个数据库都有对应的data目录，避免数据库存在但数据目录缺失的情况
         for db_name in dbs:
             db_data_dir = os.path.join(data_root, db_name)
             os.makedirs(db_data_dir, exist_ok=True)
-        
         return sorted(dbs)
 
     def get_data_files(self, category: str | None = None) -> list:
-        """获取 data_path 下指定分类或根目录的所有允许文件"""
         base_dir = get_abs_path(chroma_cfg['data_path'])
         if category == self.default_db_name or category is None:
             source_dir = base_dir
@@ -189,7 +274,6 @@ class VectorStoreService:
         return sorted(files)
 
     def load_documents_from_path(self, source_path: str, recursive: bool = True) -> dict:
-        """从指定目录加载文件到当前数据库"""
         if not os.path.isdir(source_path):
             return {"success": False, "message": f"目录不存在：{source_path}", "imported_files": 0}
 
@@ -206,11 +290,17 @@ class VectorStoreService:
                 documents = self.get_file_documents(path)
                 if not documents:
                     continue
-                split_documents = self.splitter.split_documents(documents)
+                
+                # 根据文件大小选择合适的分块器
+                file_size = os.path.getsize(path)
+                splitter = self._get_splitter_for_file(file_size)
+                split_documents = splitter.split_documents(documents)
+                
                 # 过滤空的或过短的chunk
                 split_documents = self._filter_empty_chunks(split_documents)
                 if not split_documents:
                     continue
+                
                 self.vectors_store.add_documents(split_documents)
                 self.save_md5_hex(md5_hex)
                 self.save_file_metadata(md5_hex, os.path.basename(path), len(split_documents))
@@ -226,7 +316,6 @@ class VectorStoreService:
         }
 
     def import_data_category(self, category_name: str) -> dict:
-        """将 data_path 下的某个分类文件夹导入到同名数据库"""
         data_root = get_abs_path(chroma_cfg['data_path'])
         if category_name == self.default_db_name:
             source_path = data_root
@@ -246,9 +335,6 @@ class VectorStoreService:
         return target_store.load_documents_from_path(source_path, recursive=recursive)
     
     def check_md5_hex(self, md5_for_check: str) -> bool:
-        """
-        检查MD5值是否已经存在于向量库中
-        """
         md5_file_path = self.get_md5_store_path()
         if not os.path.exists(md5_file_path):
             os.makedirs(os.path.dirname(md5_file_path), exist_ok=True)
@@ -261,28 +347,18 @@ class VectorStoreService:
             return False
             
     def save_md5_hex(self, md5_hex: str):
-        """
-        将MD5值保存到存储文件中
-        """
         md5_file_path = self.get_md5_store_path()
         os.makedirs(os.path.dirname(md5_file_path), exist_ok=True)
         with open(md5_file_path, 'a', encoding='utf-8') as f:
             f.write(md5_hex + '\n')
 
     def get_file_documents(self, file_path: str) -> list:
-        """
-        根据文件类型调用不同的加载器加载文件内容，返回Document对象列表
-        """
         return load_file_content(file_path)
     
     def _filter_empty_chunks(self, documents: list) -> list:
-        """
-        过滤空的或过短的文档chunk
-        :param documents: Document对象列表
-        :return: 过滤后的Document对象列表
-        """
+        """过滤空的或过短的文档chunk"""
         filtered = []
-        min_length = 10  # 最小长度阈值
+        min_length = 10
         
         for doc in documents:
             content = doc.page_content.strip() if doc.page_content else ""
@@ -294,10 +370,6 @@ class VectorStoreService:
         return filtered
 
     def load_document(self):
-        """
-        从数据文件夹加载文件，转为向量存入向量库
-        计算文件的MD5值，判断文件是否已经被加载过，避免重复加载
-        """
         allowed_file_pathes = listdir_with_allowed_types(get_abs_path(chroma_cfg['data_path']), tuple(chroma_cfg['allow_knowledge_file_type']))
 
         for path in allowed_file_pathes:
@@ -313,12 +385,16 @@ class VectorStoreService:
                 if not documents:
                     logger.warning(f"[加载知识库文件]文件{path}没有加载到内容，跳过")
                     continue
-                split_documents = self.splitter.split_documents(documents)
-                # 过滤空的或过短的chunk
+                
+                file_size = os.path.getsize(path)
+                splitter = self._get_splitter_for_file(file_size)
+                split_documents = splitter.split_documents(documents)
+                
                 split_documents = self._filter_empty_chunks(split_documents)
                 if not split_documents:
                     logger.warning(f"[加载知识库文件]文件{path}没有分割出有效内容，跳过")
                     continue
+                
                 self.vectors_store.add_documents(split_documents)
                 self.save_md5_hex(md5_hex)
                 logger.info(f"[加载知识库文件]成功加载文件{path}，并保存MD5值")
@@ -327,12 +403,6 @@ class VectorStoreService:
                 continue
 
     def upload_file(self, file_path: str, file_name: str) -> dict:
-        """
-        上传单个文件到知识库
-        :param file_path: 文件临时路径
-        :param file_name: 原始文件名
-        :return: 上传结果字典
-        """
         try:
             md5_hex = get_file_md5_hex(file_path)
             if md5_hex is None:
@@ -346,7 +416,11 @@ class VectorStoreService:
             if not documents:
                 return {"success": False, "message": f"无法读取文件 {file_name} 的内容"}
             
-            split_documents = self.splitter.split_documents(documents)
+            # 根据文件大小选择合适的分块器
+            file_size = os.path.getsize(file_path)
+            splitter = self._get_splitter_for_file(file_size)
+            split_documents = splitter.split_documents(documents)
+            
             # 过滤空的或过短的chunk
             split_documents = self._filter_empty_chunks(split_documents)
             if not split_documents:
@@ -374,10 +448,6 @@ class VectorStoreService:
             return {"success": False, "message": f"上传失败：{str(e)}"}
 
     def get_uploaded_files(self) -> list:
-        """
-        获取已上传文件的元数据信息列表
-        :return: 文件元数据列表
-        """
         metadata = self.load_file_metadata()
         if metadata:
             return list(metadata.values())
@@ -390,11 +460,6 @@ class VectorStoreService:
         return [{"md5": md5, "file_name": "未知文件名", "chunks": 0, "uploaded_at": "未知"} for md5 in md5_list]
 
     def remove_file(self, md5_to_remove: str) -> dict:
-        """
-        从知识库中删除指定MD5的文件
-        :param md5_to_remove: 要删除的文件MD5值
-        :return: 删除结果字典
-        """
         try:
             md5_file_path = self.get_md5_store_path()
             if not os.path.exists(md5_file_path):
@@ -436,12 +501,6 @@ class VectorStoreService:
             return {"success": False, "message": f"删除失败：{str(e)}"}
 
     def reparse_file(self, file_path: str, file_name: str) -> dict:
-        """
-        重新解析文件（先删除旧的，再重新上传）
-        :param file_path: 文件临时路径
-        :param file_name: 原始文件名
-        :return: 重新解析结果字典
-        """
         try:
             md5_hex = get_file_md5_hex(file_path)
             if md5_hex is None:
@@ -459,23 +518,15 @@ class VectorStoreService:
             return {"success": False, "message": f"重新解析失败：{str(e)}"}
 
     def delete_database(self) -> dict:
-        """
-        删除当前知识库数据库
-        :return: 删除结果字典
-        """
         import time
         
         try:
             persist_dir = os.path.join(self.persist_base_dir, self.current_db)
             data_dir = os.path.join(get_abs_path(chroma_cfg['data_path']), self.current_db)
 
-            # 先关闭数据库连接，释放文件句柄
             self._close_store()
-            
-            # 等待一小段时间确保文件句柄完全释放
             time.sleep(0.5)
             
-            # 尝试删除目录，最多重试3次
             max_retries = 3
             retry_delay = 1
             
@@ -496,6 +547,9 @@ class VectorStoreService:
                 shutil.rmtree(data_dir)
                 logger.info(f"[删除数据库]成功删除本地数据目录: {data_dir}")
 
+            # 清除缓存
+            self.cache_manager.clear_cache(self.current_db)
+
             logger.info(f"[删除数据库]成功删除数据库: {self.current_db}")
             return {"success": True, "message": f"数据库 {self.current_db} 删除成功"}
         except Exception as e:
@@ -503,10 +557,6 @@ class VectorStoreService:
             return {"success": False, "message": f"删除失败：{str(e)}"}
 
     def get_collection_stats(self) -> dict:
-        """
-        获取向量库统计信息
-        :return: 统计信息字典
-        """
         try:
             count = self.vectors_store._collection.count()
             uploaded_files = self.get_uploaded_files()
@@ -522,7 +572,6 @@ class VectorStoreService:
 
     @staticmethod
     def _migrate_invalid_db_names():
-        """迁移无效的数据库名称目录到有效的名称"""
         persist_base_dir = get_abs_path(chroma_cfg['persist_directory'])
         if not os.path.exists(persist_base_dir):
             return
@@ -543,10 +592,6 @@ class VectorStoreService:
 
     @staticmethod
     def list_databases() -> list:
-        """
-        获取所有可用的数据库列表
-        :return: 数据库名称列表
-        """
         VectorStoreService._migrate_invalid_db_names()
         persist_base_dir = get_abs_path(chroma_cfg['persist_directory'])
         db_list = []
@@ -555,16 +600,10 @@ class VectorStoreService:
                 item_path = os.path.join(persist_base_dir, item)
                 if os.path.isdir(item_path):
                     db_list.append(item)
-        # 去重处理，保持顺序
         db_list = list(dict.fromkeys(db_list))
         return sorted(db_list)
     
     def create_database(self, db_name: str) -> dict:
-        """
-        创建新数据库
-        :param db_name: 数据库名称
-        :return: 创建结果字典
-        """
         try:
             if not db_name or not db_name.strip():
                 return {"success": False, "message": "数据库名称不能为空"}
@@ -590,11 +629,6 @@ class VectorStoreService:
             return {"success": False, "message": f"创建失败：{str(e)}"}
     
     def switch_database(self, db_name: str) -> dict:
-        """
-        切换到指定数据库
-        :param db_name: 数据库名称
-        :return: 切换结果字典
-        """
         try:
             db_name = VectorStoreService._sanitize_db_name(db_name)
             
@@ -613,6 +647,30 @@ class VectorStoreService:
         except Exception as e:
             logger.error(f"[切换数据库]切换数据库时发生错误：{repr(e)},exc_info=True")
             return {"success": False, "message": f"切换失败：{str(e)}"}
+
+    def retrieve_with_cache(self, query: str, top_k: int = None) -> List[Any]:
+        """带缓存的检索方法"""
+        top_k = top_k or rag_cfg['retrieval']['top_k']
+        
+        # 尝试从缓存获取
+        cached_results = self.cache_manager.get_cache(self.current_db, query)
+        if cached_results:
+            logger.info(f"[缓存命中]查询: {query}")
+            return cached_results
+        
+        # 执行实际检索
+        try:
+            retriever = self.get_retriever()
+            results = retriever.invoke(query)
+            
+            # 缓存结果
+            self.cache_manager.set_cache(self.current_db, query, results)
+            
+            return results
+        except Exception as e:
+            logger.error(f"[检索失败]查询失败: {e}")
+            return []
+
 
 if __name__ == "__main__":
     vector_store_service = VectorStoreService()

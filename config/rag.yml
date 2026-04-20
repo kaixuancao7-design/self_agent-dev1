@@ -19,9 +19,15 @@ embedding_model_name: text-embedding-v4
 # 检索配置
 retrieval:
   top_k: 5
-  hybrid_weight: 0.5
+  hybrid_weight: 0.5        # 混合权重（0-1，用于weighted融合方法）
   chunk_size: 512
   chunk_overlap: 64
+  bm25_k1: 1.5              # BM25参数：控制词频饱和
+  bm25_b: 0.75              # BM25参数：控制文档长度影响
+  rrf_k: 60                 # RRF融合参数
+  bm25_weight: 0.5          # BM25检索权重（0-1，用于RRF融合）
+  vector_weight: 0.5        # 向量检索权重（0-1，用于RRF融合）
+  fusion_method: rrf        # 融合方法：rrf 或 weighted
 
 # 重排配置
 rerank:
