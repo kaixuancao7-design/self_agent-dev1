@@ -166,6 +166,51 @@ Query → Query Processing → Hybrid Search → RRF Fusion → Filtering → Re
 python scripts/run_ragas_evaluation.py
 ```
 
+### 🌐 FastAPI 后端接口
+
+系统提供完整的 RESTful API 接口，支持知识库CRUD、Agent问答、文件上传等核心功能。
+
+**主要API端点:**
+
+| 模块 | 端点 | 方法 | 描述 |
+|------|------|------|------|
+| **健康检查** | `/api/health` | GET | 服务健康检查 |
+| **用户管理** | `/api/users` | POST | 创建用户 |
+| | `/api/users/{user_id}` | GET | 获取用户信息 |
+| | `/api/users/by-username/{username}` | GET | 根据用户名获取用户 |
+| **会话管理** | `/api/sessions` | POST | 创建会话 |
+| | `/api/sessions/{session_id}` | GET | 获取会话信息 |
+| | `/api/sessions/{session_id}` | DELETE | 删除会话 |
+| **知识库** | `/api/databases` | GET | 获取数据库列表 |
+| | `/api/databases/{db_name}` | POST | 创建数据库 |
+| | `/api/databases/{db_name}` | DELETE | 删除数据库 |
+| | `/api/databases/current` | GET | 获取当前数据库信息 |
+| **文件上传** | `/api/upload` | POST | 上传文件到知识库 |
+| | `/api/upload/celery` | POST | 通过Celery异步上传 |
+| **聊天** | `/api/chat` | POST | Agent问答接口 |
+
+### 🔐 多用户会话隔离
+
+系统支持多用户会话隔离，确保数据安全性：
+
+| 特性 | 描述 |
+|------|------|
+| **用户表** | 存储用户信息（ID、用户名、邮箱） |
+| **会话表** | 存储会话信息（ID、用户ID、会话名称、创建时间） |
+| **数据隔离** | 每个用户的会话独立，数据不串流 |
+| **状态持久化** | 支持本地文件和数据库两种持久化方式 |
+
+### ⚡ 异步架构
+
+系统采用异步设计，提升并发处理能力：
+
+| 特性 | 描述 |
+|------|------|
+| **异步数据库操作** | 使用 asyncpg/sqlalchemy async 进行异步数据库操作 |
+| **异步LLM调用** | 支持异步调用LLM接口 |
+| **Celery任务队列** | 处理长任务（如大文件解析、Ragas评估） |
+| **并发支持** | 支持10人以内并发，无明显卡顿 |
+
 ## 🏗️ 项目结构
 
 ```
@@ -214,19 +259,25 @@ python scripts/run_ragas_evaluation.py
 │       ├── deepseek_provider.py     # DeepSeek实现
 │       └── ollama_provider.py       # Ollama本地实现
 ├── rag/                     # RAG 检索服务
-│   ├── vector_store.py      # 向量存储（含空Chunk过滤）
+│   ├── vector_store.py      # 向量存储（含空Chunk过滤、大文件分块、Chroma缓存）
 │   ├── bm25_index.py        # BM25 索引
-│   ├── hybrid_retriever.py  # 混合检索（Query Processing、RRF Fusion）
+│   ├── hybrid_retriever.py  # 混合检索（Query Processing、RRF Fusion、权重可配置）
 │   ├── reranker.py          # 重排器（Linear/Cross-Encoder/LLM）
 │   ├── ragas_evaluator.py   # Ragas 量化评估器
 │   ├── image_index.py       # 图片索引
 │   └── rag_service.py       # RAG 服务
+├── backend/                 # FastAPI 后端服务
+│   ├── __init__.py          # 模块导出
+│   ├── main.py              # FastAPI应用入口
+│   ├── database.py          # 数据库模型（用户表、会话表）
+│   ├── async_providers.py   # 异步Provider封装
+│   └── tasks.py             # Celery任务定义
 ├── scripts/                 # 运行脚本
 │   └── run_ragas_evaluation.py  # Ragas 评估脚本
 ├── config/                  # 配置文件
 │   ├── agent.yml            # Agent 配置
-│   ├── chroma.yml           # Chroma 配置
-│   ├── rag.yml              # RAG 配置
+│   ├── chroma.yml           # Chroma 向量数据库配置
+│   ├── rag.yml              # RAG 配置（含混合检索权重）
 │   └── prompts.yml          # 提示词配置
 ├── prompts/                 # 提示词文件
 │   ├── main_prompt.txt      # 主提示词
@@ -238,7 +289,6 @@ python scripts/run_ragas_evaluation.py
 ├── chromadb/                # Chroma 向量数据库（按数据库名组织）
 ├── data/                    # 数据文件（按数据库名组织）
 ├── utils/                   # 工具函数
-├── model/                   # 模型工厂
 ├── test/                    # 测试文件
 │   └── test_skills_framework.py  # Skills框架测试
 └── app.py                   # Streamlit 应用入口
@@ -268,11 +318,28 @@ pip install -r requirements.txt
 3. **启动 Ollama**
 ```bash
 ollama run qwen3.5:9b
+ollama run Mxbai-embed-large
 ```
 
-4. **运行应用**
+### 运行方式
+
+#### Streamlit 界面（推荐）
 ```bash
 streamlit run app.py
+```
+
+#### FastAPI 后端服务
+```bash
+# 开发模式
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+
+# 生产模式
+python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
+```
+
+#### Celery 任务队列（可选）
+```bash
+celery -A backend.tasks worker --loglevel=info
 ```
 
 ## ⚙️ 配置说明
@@ -283,14 +350,28 @@ streamlit run app.py
 |------|------|
 | `config/agent.yml` | Agent 配置（模型、高级能力开关、用户配置） |
 | `config/chroma.yml` | Chroma 向量数据库配置 |
-| `config/rag.yml` | RAG 检索配置 |
+| `config/rag.yml` | RAG 检索配置（含混合检索权重） |
 | `config/prompts.yml` | 提示词配置 |
 
-### 高级能力开关
+### 混合检索权重配置
 
-在 `config/agent.yml` 中设置：
+在 `config/rag.yml` 中设置：
 ```yaml
-enable_advanced_features: true  # 启用高级能力
+retrieval:
+  bm25_weight: 0.5      # BM25检索权重
+  vector_weight: 0.5    # 向量检索权重
+  hybrid_weight: 0.5    # 混合权重
+  rrf_k: 60             # RRF融合参数
+```
+
+### LangGraph 工作流配置
+
+```yaml
+langgraph:
+  enabled: true          # 是否启用LangGraph工作流
+  max_steps: 10         # 最大执行步骤（防止死循环）
+  checkpoint: false      # 是否启用检查点（持久化状态）
+  verbose: true         # 是否输出详细日志
 ```
 
 ## 📖 使用指南
@@ -309,9 +390,28 @@ enable_advanced_features: true  # 启用高级能力
    - 简单问题：直接检索知识库回答
    - 复杂问题：自动进行任务拆解和规划
 
-### 报告生成
+### API 使用示例
 
-输入类似「生成我的使用报告」的指令，系统会自动生成个性化报告。
+**创建用户:**
+```bash
+curl -X POST http://localhost:8000/api/users \
+  -H "Content-Type: application/json" \
+  -d '{"username": "testuser", "email": "test@example.com"}'
+```
+
+**创建会话:**
+```bash
+curl -X POST http://localhost:8000/api/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"user_id": "user-uuid", "name": "我的会话"}'
+```
+
+**聊天:**
+```bash
+curl -X POST http://localhost:8000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"session_id": "session-uuid", "message": "你好", "mode": "react"}'
+```
 
 ## 🛠️ 开发
 
@@ -343,6 +443,42 @@ enable_advanced_features: true  # 启用高级能力
 | `fact_check.txt` | 事实核查提示词 |
 
 ## 📋 更新日志
+
+### v1.5.0 (2026-04-20)
+
+**新增功能:**
+- ✅ FastAPI 后端接口
+  - 用户管理 API（创建、查询、根据用户名获取）
+  - 会话管理 API（创建、查询、删除）
+  - 知识库 CRUD API（数据库列表、创建、删除、当前数据库信息）
+  - 文件上传 API（同步/异步）
+  - Agent 聊天 API
+- ✅ 多用户会话隔离
+  - 用户表和会话表（SQLite）
+  - 会话数据隔离，不串流
+  - 状态持久化支持（本地文件/数据库）
+- ✅ 异步改造
+  - 异步数据库操作
+  - 异步 LLM 调用
+  - Celery 任务队列（处理长任务）
+  - 支持10人以内并发
+
+**RAG模块优化:**
+- ✅ 空Chunk过滤（长度<10的chunk被过滤）
+- ✅ 大文件动态分块（根据文件大小自动调整chunk_size）
+- ✅ Chroma缓存机制（提高检索性能）
+- ✅ 混合检索权重可配置（BM25/向量/RRF权重）
+
+**LangGraph工作流改进:**
+- ✅ 最大步数限制（防止死循环）
+- ✅ 异常捕获和失败重试机制
+- ✅ 状态持久化（本地文件/数据库）
+- ✅ 技能失败降级机制（FallbackSkill）
+
+**修复问题:**
+- ✅ 修复知识库参考文件路径显示临时文件路径的问题
+- ✅ 修复 `OllamaEmbedding` 缺少 `embed_documents` 方法的问题
+- ✅ 清理 git 追踪中的 `__pycache__` 和 `.vscode` 文件
 
 ### v1.4.1 (2026-04-17)
 
