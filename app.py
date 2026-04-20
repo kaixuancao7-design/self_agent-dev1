@@ -1,10 +1,14 @@
 import time
+import json
+import requests
 
 from agent.react_agent import ReactAgent
 from agent.langgraph_workflow import LangGraphAgent
 from utils.config_handler import agent_cfg
 import streamlit as st
 
+# API 配置
+API_BASE_URL = "http://localhost:8000/api"
 
 def detect_task_complexity(prompt: str) -> str:
     """
@@ -13,22 +17,18 @@ def detect_task_complexity(prompt: str) -> str:
     :param prompt: 用户输入
     :return: 推荐的模式（"react" 或 "langgraph"）
     """
-    # 读取配置
     auto_switch = agent_cfg.get("langgraph", {}).get("auto_switch", False)
     
     if not auto_switch:
         return "react"
     
-    # 基于多个维度判断复杂度
     complexity_score = 0
     
-    # 1. 输入长度
     if len(prompt) > 30:
         complexity_score += 1
     if len(prompt) > 60:
-        complexity_score += 1  # 更长的输入额外加分
+        complexity_score += 1
     
-    # 2. 关键词匹配（复杂任务指示词）- 每个匹配都加分
     complex_keywords = [
         "帮我", "请", "需要", "制定", "规划", "创建", "分析",
         "报告", "总结", "研究", "方案", "计划", "步骤", "流程",
@@ -38,41 +38,87 @@ def detect_task_complexity(prompt: str) -> str:
     for keyword in complex_keywords:
         if keyword in prompt:
             keyword_matches += 1
-    complexity_score += min(keyword_matches, 2)  # 最多加2分
+    complexity_score += min(keyword_matches, 2)
     
-    # 3. 问句类型（多个问题或嵌套问题）
     question_count = prompt.count("？") + prompt.count("?") + prompt.count("吗")
     if question_count >= 2:
         complexity_score += 1
     
-    # 4. 任务拆解指示词 - 权重更高
     task_decompose_keywords = ["拆解", "分解", "步骤", "子任务", "先", "再", "然后", "依次"]
     for keyword in task_decompose_keywords:
         if keyword in prompt:
             complexity_score += 2
             break
     
-    # 5. 明确的多步骤任务指示
     multi_step_indicators = ["首先", "其次", "接着", "最后", "第一步", "第二步"]
     for indicator in multi_step_indicators:
         if indicator in prompt:
             complexity_score += 2
             break
     
-    # 判断结果
     if complexity_score >= 2:
         return "langgraph"
     return "react"
 
+# API 调用函数
+def api_call(endpoint: str, method: str = "GET", data: dict = None, files: dict = None) -> dict:
+    """通用 API 调用函数"""
+    try:
+        url = f"{API_BASE_URL}{endpoint}"
+        if method == "GET":
+            response = requests.get(url, params=data)
+        elif method == "POST":
+            if files:
+                response = requests.post(url, data=data, files=files)
+            else:
+                response = requests.post(url, json=data)
+        elif method == "DELETE":
+            response = requests.delete(url, params=data)
+        else:
+            return {"success": False, "error": f"不支持的方法: {method}"}
+        
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"success": False, "error": f"HTTP {response.status_code}: {response.text}"}
+    except requests.exceptions.RequestException as e:
+        return {"success": False, "error": f"请求失败: {str(e)}"}
+
+def api_chat_stream(session_id: str, message: str, mode: str):
+    """流式 API 聊天"""
+    try:
+        url = f"{API_BASE_URL}/chat/stream"
+        payload = {
+            "session_id": session_id,
+            "message": message,
+            "mode": mode
+        }
+        response = requests.post(url, json=payload, stream=True)
+        response.raise_for_status()
+        
+        for line in response.iter_lines():
+            if line:
+                line = line.decode('utf-8')
+                if line.startswith('data: '):
+                    data_str = line[6:]
+                    try:
+                        data = json.loads(data_str)
+                        chunk = data.get('chunk', '')
+                        finished = data.get('finished', False)
+                        yield chunk
+                        if finished:
+                            break
+                    except json.JSONDecodeError:
+                        continue
+    except requests.exceptions.RequestException as e:
+        yield f"API 请求失败: {str(e)}"
 
 def show_chat_page():
     st.title("🤖 智能知识库助手")
     st.divider()
 
-    # 添加自定义 CSS 样式
     st.markdown("""
         <style>
-        /* 打字光标动画 */
         @keyframes blink {
             0%, 50% { opacity: 1; }
             51%, 100% { opacity: 0; }
@@ -83,7 +129,6 @@ def show_chat_page():
             font-weight: bold;
         }
         
-        /* 消息气泡样式 */
         .user-message {
             background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
             color: white;
@@ -96,7 +141,6 @@ def show_chat_page():
             border-radius: 12px 12px 12px 4px;
         }
         
-        /* 状态提示样式 */
         .status-info {
             border-left: 4px solid #0ea5e9;
             padding-left: 12px;
@@ -111,10 +155,27 @@ def show_chat_page():
         </style>
     """, unsafe_allow_html=True)
 
-    # 读取配置
+    # 添加运行模式选择（本地模式 / API 模式）
+    run_mode = st.sidebar.selectbox(
+        "运行模式",
+        ["🖥️ 本地模式", "🌐 API 模式"],
+        index=0,
+        help="本地模式：直接调用本地 Agent；API 模式：通过 FastAPI 后端调用"
+    )
+
+    # 初始化会话（API模式下）
+    if run_mode == "🌐 API 模式":
+        if "api_session_id" not in st.session_state:
+            result = api_call("/sessions", "POST", {"user_id": "streamlit_user"})
+            if result.get("success", True):
+                st.session_state["api_session_id"] = result.get("session_id", "")
+            else:
+                st.session_state["api_session_id"] = "test_session"
+        
+        st.sidebar.info(f"会话 ID: {st.session_state['api_session_id']}")
+
     auto_switch_enabled = agent_cfg.get("langgraph", {}).get("auto_switch", False)
     
-    # 添加模式选择
     if auto_switch_enabled:
         mode_options = ["🔄 自动切换模式", "⚡ ReactAgent 模式", "🧠 LangGraph 工作流模式"]
     else:
@@ -126,20 +187,17 @@ def show_chat_page():
         index=0
     )
 
-    # 初始化 Agent（延迟到收到用户输入时根据复杂度决定）
-    if "agent" not in st.session_state:
-        # 默认使用 ReactAgent
-        st.session_state["agent"] = ReactAgent()
-        st.session_state["agent_mode"] = "⚡ ReactAgent 模式"
+    if run_mode == "🖥️ 本地模式":
+        if "agent" not in st.session_state:
+            st.session_state["agent"] = ReactAgent()
+            st.session_state["agent_mode"] = "⚡ ReactAgent 模式"
     
     if "message" not in st.session_state:
         st.session_state["message"] = []
 
-    # 显示消息历史
     for idx, message in enumerate(st.session_state["message"]):
         with st.chat_message(message["role"]):
             st.write(message["content"])
-            # 添加复制按钮（使用索引确保唯一key）
             if message["role"] == "assistant":
                 if st.button("📋 复制", key=f"copy_{idx}"):
                     import pyperclip
@@ -153,86 +211,44 @@ def show_chat_page():
         st.session_state["message"].append({"role":"user","content":prompt})
         response_messages = []
         
-        # 确定使用的模式（去除emoji前缀）
         clean_selected_mode = selected_mode.replace("🔄 ", "").replace("⚡ ", "").replace("🧠 ", "")
         if clean_selected_mode == "自动切换模式":
             detected_mode = detect_task_complexity(prompt)
             actual_mode = "🧠 LangGraph 工作流模式" if detected_mode == "langgraph" else "⚡ ReactAgent 模式"
+            api_mode = "langgraph" if detected_mode == "langgraph" else "react"
         else:
             actual_mode = selected_mode
+            api_mode = "langgraph" if "LangGraph" in actual_mode else "react"
         
-        # 根据模式切换 Agent
-        if st.session_state.get("agent_mode") != actual_mode:
-            if "ReactAgent" in actual_mode:
-                st.session_state["agent"] = ReactAgent()
-            else:
-                st.session_state["agent"] = LangGraphAgent()
-            st.session_state["agent_mode"] = actual_mode
+        if run_mode == "🖥️ 本地模式":
+            if st.session_state.get("agent_mode") != actual_mode:
+                if "ReactAgent" in actual_mode:
+                    st.session_state["agent"] = ReactAgent()
+                else:
+                    st.session_state["agent"] = LangGraphAgent()
+                st.session_state["agent_mode"] = actual_mode
         
-        # 显示当前使用的模式
-        st.sidebar.info(f"当前模式: {st.session_state['agent_mode']}")
+        st.sidebar.info(f"当前模式: {actual_mode}")
         
-        # 创建状态显示区域
         status_placeholder = st.empty()
         status_placeholder.info("🤔 正在分析您的问题...")
-        
-        if "ReactAgent" in actual_mode:
-            # ReactAgent 使用流式响应
-            res_stream = st.session_state["agent"].execute_stream(prompt)
-            
-            def capture_react(generator, cache_list):
+
+        if run_mode == "🌐 API 模式":
+            # 使用 API 模式
+            def capture_api(generator, cache_list):
                 status_shown = False
                 for chunk in generator:
                     if chunk is None:
                         continue
                     cache_list.append(chunk)
                     
-                    # 首次输出时更新状态
                     if not status_shown:
                         status_placeholder.success("✍️ 正在为您生成回答...")
                         status_shown = True
                     
                     if isinstance(chunk, str):
                         for char in chunk:
-                            time.sleep(0.008)  # 更自然的打字速度
-                            yield char
-                    elif isinstance(chunk, dict):
-                        content = chunk.get('messages', [{}])[-1].get('content', '')
-                        if content:
-                            for char in content:
-                                time.sleep(0.008)
-                                yield char
-                    else:
-                        content = getattr(chunk, 'content', str(chunk))
-                        for char in content:
                             time.sleep(0.008)
-                            yield char
-                
-                # 完成后清除状态
-                status_placeholder.empty()
-            
-            with st.chat_message("assistant"):
-                st.write_stream(capture_react(res_stream, response_messages))
-            full_response = "".join(response_messages)
-        else:
-            # LangGraph 模式使用流式响应
-            res_stream = st.session_state["agent"].run_stream(prompt)
-            
-            def capture_langgraph(generator, cache_list):
-                status_shown = False
-                for chunk in generator:
-                    if chunk is None:
-                        continue
-                    cache_list.append(chunk)
-                    
-                    # 首次输出时更新状态
-                    if not status_shown:
-                        status_placeholder.success("✍️ 正在为您生成回答...")
-                        status_shown = True
-                    
-                    if isinstance(chunk, str):
-                        for char in chunk:
-                            time.sleep(0.008)  # 更自然的打字速度
                             yield char
                     else:
                         content = str(chunk)
@@ -240,17 +256,82 @@ def show_chat_page():
                             time.sleep(0.008)
                             yield char
                 
-                # 完成后清除状态
                 status_placeholder.empty()
             
             with st.chat_message("assistant"):
-                st.write_stream(capture_langgraph(res_stream, response_messages))
+                st.write_stream(capture_api(api_chat_stream(
+                    st.session_state["api_session_id"], prompt, api_mode
+                ), response_messages))
             full_response = "".join(response_messages)
+        else:
+            # 使用本地模式
+            if "ReactAgent" in actual_mode:
+                res_stream = st.session_state["agent"].execute_stream(prompt)
+                
+                def capture_react(generator, cache_list):
+                    status_shown = False
+                    for chunk in generator:
+                        if chunk is None:
+                            continue
+                        cache_list.append(chunk)
+                        
+                        if not status_shown:
+                            status_placeholder.success("✍️ 正在为您生成回答...")
+                            status_shown = True
+                        
+                        if isinstance(chunk, str):
+                            for char in chunk:
+                                time.sleep(0.008)
+                                yield char
+                        elif isinstance(chunk, dict):
+                            content = chunk.get('messages', [{}])[-1].get('content', '')
+                            if content:
+                                for char in content:
+                                    time.sleep(0.008)
+                                    yield char
+                        else:
+                            content = getattr(chunk, 'content', str(chunk))
+                            for char in content:
+                                time.sleep(0.008)
+                                yield char
+                    
+                    status_placeholder.empty()
+                
+                with st.chat_message("assistant"):
+                    st.write_stream(capture_react(res_stream, response_messages))
+                full_response = "".join(response_messages)
+            else:
+                res_stream = st.session_state["agent"].run_stream(prompt)
+                
+                def capture_langgraph(generator, cache_list):
+                    status_shown = False
+                    for chunk in generator:
+                        if chunk is None:
+                            continue
+                        cache_list.append(chunk)
+                        
+                        if not status_shown:
+                            status_placeholder.success("✍️ 正在为您生成回答...")
+                            status_shown = True
+                        
+                        if isinstance(chunk, str):
+                            for char in chunk:
+                                time.sleep(0.008)
+                                yield char
+                        else:
+                            content = str(chunk)
+                            for char in content:
+                                time.sleep(0.008)
+                                yield char
+                    
+                    status_placeholder.empty()
+                
+                with st.chat_message("assistant"):
+                    st.write_stream(capture_langgraph(res_stream, response_messages))
+                full_response = "".join(response_messages)
         
-        # 回答完成后的状态提示
         if full_response:
             status_placeholder.success("✅ 回答完成")
-            # 3秒后自动清除状态提示
             time.sleep(3)
             status_placeholder.empty()
         
@@ -262,14 +343,24 @@ def show_upload_page():
     st.title("知识库管理")
     st.divider()
 
+    # 添加运行模式选择
+    run_mode = st.sidebar.selectbox(
+        "运行模式",
+        ["🖥️ 本地模式", "🌐 API 模式"],
+        index=0,
+        help="本地模式：直接操作本地数据库；API 模式：通过 FastAPI 后端操作"
+    )
+
     from rag.vector_store import VectorStoreService
     from utils.config_handler import chroma_cfg
     from utils.file_handler import SUPPORTED_FILE_TYPES, get_file_md5_hex
     import tempfile
     import os
 
-    if "vector_store" not in st.session_state:
-        st.session_state["vector_store"] = VectorStoreService()
+    if run_mode == "🖥️ 本地模式":
+        if "vector_store" not in st.session_state:
+            st.session_state["vector_store"] = VectorStoreService()
+    
     if "upload_progress" not in st.session_state:
         st.session_state["upload_progress"] = 0
     if "delete_confirm" not in st.session_state:
@@ -289,32 +380,50 @@ def show_upload_page():
     if "upload_key" not in st.session_state:
         st.session_state["upload_key"] = 0
 
-    db_list = VectorStoreService.list_databases()
-    current_db = st.session_state["vector_store"].current_db
+    # 获取数据库列表
+    if run_mode == "🌐 API 模式":
+        db_list_result = api_call("/databases", "GET")
+        db_list = db_list_result if isinstance(db_list_result, list) else []
+        current_db_info = api_call("/databases/current", "GET")
+        current_db = current_db_info.get("current_db", "default")
+        stats = current_db_info
+    else:
+        db_list = VectorStoreService.list_databases()
+        current_db = st.session_state["vector_store"].current_db
+        stats = st.session_state["vector_store"].get_collection_stats()
 
     st.sidebar.subheader("数据库选择")
-    selected_db = st.sidebar.selectbox("选择数据库", db_list, index=db_list.index(current_db) if current_db in db_list else 0)
     
-    if selected_db != current_db:
-        result = st.session_state["vector_store"].switch_database(selected_db)
-        if result["success"]:
-            st.sidebar.success(result["message"])
-            st.rerun()
-        else:
-            st.sidebar.error(result["message"])
+    if db_list:
+        selected_db = st.sidebar.selectbox("选择数据库", db_list, 
+            index=db_list.index(current_db) if current_db in db_list else 0)
+        
+        if selected_db != current_db:
+            if run_mode == "🌐 API 模式":
+                result = api_call(f"/databases/{selected_db}/switch", "POST")
+            else:
+                result = st.session_state["vector_store"].switch_database(selected_db)
+            
+            if result.get("success", False):
+                st.sidebar.success(result["message"])
+                st.rerun()
+            else:
+                st.sidebar.error(result.get("message", "切换失败"))
 
     new_db_name = st.sidebar.text_input("创建新数据库", st.session_state["create_db_name"])
     if st.sidebar.button("创建数据库"):
         st.session_state["create_db_name"] = new_db_name
-        result = st.session_state["vector_store"].create_database(new_db_name)
-        if result["success"]:
+        if run_mode == "🌐 API 模式":
+            result = api_call("/databases", "POST", {"db_name": new_db_name})
+        else:
+            result = st.session_state["vector_store"].create_database(new_db_name)
+        
+        if result.get("success", False):
             st.sidebar.success(result["message"])
             st.session_state["create_db_name"] = ""
             st.rerun()
         else:
-            st.sidebar.error(result["message"])
-
-    stats = st.session_state["vector_store"].get_collection_stats()
+            st.sidebar.error(result.get("message", "创建失败"))
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -322,7 +431,7 @@ def show_upload_page():
     with col2:
         st.metric("总Chunks数", stats.get("total_chunks", 0))
     with col3:
-        st.metric("当前数据库", stats.get("db_name", "未知"))
+        st.metric("当前数据库", stats.get("db_name", stats.get("current_db", "未知")))
 
     st.divider()
 
@@ -355,16 +464,20 @@ def show_upload_page():
                     temp_file_path = temp_file.name
                 
                 try:
-                    result = st.session_state["vector_store"].upload_file(temp_file_path, uploaded_file.name)
-                    
-                    if result["success"]:
-                        has_changes = True
-                        st.success(f"✅ {result['message']}")
-                        with st.expander(f"查看详情"):
-                            st.write(f"📄 切分的Chunks数量: {result['chunks']}")
-                            st.write(f"🔍 文件MD5: {result['md5']}")
+                    if run_mode == "🌐 API 模式":
+                        with open(temp_file_path, "rb") as f:
+                            result = api_call("/files/upload", "POST", files={"file": (uploaded_file.name, f)})
                     else:
-                        st.warning(f"⚠️ {result['message']}")
+                        result = st.session_state["vector_store"].upload_file(temp_file_path, uploaded_file.name)
+                    
+                    if result.get("success", False):
+                        has_changes = True
+                        st.success(f"✅ {result.get('message', '')}")
+                        with st.expander(f"查看详情"):
+                            st.write(f"📄 切分的Chunks数量: {result.get('chunks', '未知')}")
+                            st.write(f"🔍 文件MD5: {result.get('md5', '未知')}")
+                    else:
+                        st.warning(f"⚠️ {result.get('message', '上传失败')}")
                 finally:
                     os.unlink(temp_file_path)
                 
@@ -377,27 +490,40 @@ def show_upload_page():
 
     with tab2:
         st.subheader("已上传文件列表")
-        uploaded_files = st.session_state["vector_store"].get_uploaded_files()
+        
+        if run_mode == "🌐 API 模式":
+            uploaded_files = api_call("/files", "GET")
+            if not isinstance(uploaded_files, list):
+                uploaded_files = []
+        else:
+            uploaded_files = st.session_state["vector_store"].get_uploaded_files()
 
-        data_categories = st.session_state["vector_store"].get_data_categories()
+        data_categories = []
+        if run_mode == "🖥️ 本地模式":
+            data_categories = st.session_state["vector_store"].get_data_categories()
+        
         if data_categories:
             st.markdown("### 本地数据目录")
             for category in data_categories:
                 category_path = os.path.join(chroma_cfg['data_path'], category)
-                file_count = len(st.session_state["vector_store"].get_data_files(category))
+                if run_mode == "🖥️ 本地模式":
+                    file_count = len(st.session_state["vector_store"].get_data_files(category))
+                else:
+                    file_count = 0
                 col1, col2 = st.columns([3, 1])
                 with col1:
                     st.write(f"- **{category}** ({file_count} 个文件)")
                 with col2:
-                    button_text = "一键自动同步导入根目录文件" if category == st.session_state["vector_store"].default_db_name else f"导入 {category}"
-                    if st.button(button_text, key=f"import_cat_{category}"):
-                        with st.spinner(f"正在导入数据目录 {category} ..."):
-                            result = st.session_state["vector_store"].import_data_category(category)
-                            if result["success"]:
-                                st.success(result["message"])
-                            else:
-                                st.error(result["message"])
-                            st.rerun()
+                    if run_mode == "🖥️ 本地模式":
+                        button_text = "一键自动同步导入根目录文件" if category == st.session_state["vector_store"].default_db_name else f"导入 {category}"
+                        if st.button(button_text, key=f"import_cat_{category}"):
+                            with st.spinner(f"正在导入数据目录 {category} ..."):
+                                result = st.session_state["vector_store"].import_data_category(category)
+                                if result["success"]:
+                                    st.success(result["message"])
+                                else:
+                                    st.error(result["message"])
+                                st.rerun()
             st.divider()
 
         if uploaded_files:
@@ -420,11 +546,15 @@ def show_upload_page():
                         del_col1, del_col2 = st.columns(2)
                         with del_col1:
                             if st.button("确认删除", key=f"confirm_delete_{md5}"):
-                                result = st.session_state["vector_store"].remove_file(md5)
-                                if result["success"]:
-                                    st.success(result["message"])
+                                if run_mode == "🌐 API 模式":
+                                    result = api_call(f"/files/{md5}", "DELETE")
                                 else:
-                                    st.error(result["message"])
+                                    result = st.session_state["vector_store"].remove_file(md5)
+                                
+                                if result.get("success", False):
+                                    st.success(result.get("message", "删除成功"))
+                                else:
+                                    st.error(result.get("message", "删除失败"))
                                 st.session_state["delete_confirm"] = False
                                 st.session_state["delete_target"] = None
                                 st.rerun()
@@ -435,12 +565,13 @@ def show_upload_page():
                     else:
                         col1, col2 = st.columns([3, 1])
                         with col1:
-                            if st.button("🪄 重新解析", key=f"reparse_{md5}"):
-                                st.session_state["reparse_target"] = md5
-                                st.session_state["reparse_file_name"] = file_name
-                                st.session_state["delete_confirm"] = False
-                                st.session_state["reparse_message"] = ""
-                                st.rerun()
+                            if run_mode == "🖥️ 本地模式":
+                                if st.button("🪄 重新解析", key=f"reparse_{md5}"):
+                                    st.session_state["reparse_target"] = md5
+                                    st.session_state["reparse_file_name"] = file_name
+                                    st.session_state["delete_confirm"] = False
+                                    st.session_state["reparse_message"] = ""
+                                    st.rerun()
                         with col2:
                             if st.button("🗑️ 删除", key=f"delete_{md5}"):
                                 st.session_state["delete_target"] = md5
@@ -451,7 +582,7 @@ def show_upload_page():
         else:
             st.info("暂无已上传的文件")
 
-        if st.session_state["reparse_target"]:
+        if st.session_state["reparse_target"] and run_mode == "🖥️ 本地模式":
             st.divider()
             st.subheader("重新解析文件")
             st.info(
@@ -498,7 +629,7 @@ def show_upload_page():
         
         st.write("### 当前数据库信息")
         st.write(f"- 数据库名称: {current_db}")
-        st.write(f"- 存储路径: {chroma_cfg['persist_directory']}/{current_db}")
+        st.write(f"- 存储路径: {chroma_cfg.get('persist_directory', '')}/{current_db}")
         st.write(f"- 已上传文件: {stats.get('total_files', 0)} 个")
         st.write(f"- 总Chunks: {stats.get('total_chunks', 0)} 个")
 
@@ -532,14 +663,21 @@ def show_upload_page():
                 confirm_text = st.text_input(f"请输入 '{current_db}' 确认删除", key="confirm_text")
                 if confirm_text == current_db:
                     if st.button("确认删除数据库", key="final_delete_db"):
-                        result = st.session_state["vector_store"].delete_database()
-                        if result["success"]:
-                            st.success(result["message"])
+                        if run_mode == "🌐 API 模式":
+                            result = api_call(f"/databases/{current_db}", "DELETE")
+                        else:
+                            result = st.session_state["vector_store"].delete_database()
+                        
+                        if result.get("success", False):
+                            st.success(result.get("message", "删除成功"))
                             new_db_list = [db for db in db_list if db != current_db]
                             if new_db_list:
-                                st.session_state["vector_store"].switch_database(new_db_list[0])
+                                if run_mode == "🌐 API 模式":
+                                    api_call(f"/databases/{new_db_list[0]}/switch", "POST")
+                                else:
+                                    st.session_state["vector_store"].switch_database(new_db_list[0])
                         else:
-                            st.error(result["message"])
+                            st.error(result.get("message", "删除失败"))
                         st.session_state["db_delete_confirm"] = False
                         st.rerun()
             with col2:
