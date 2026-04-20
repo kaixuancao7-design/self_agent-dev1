@@ -100,6 +100,10 @@ class OllamaEmbedding(BaseEmbedding):
             logger.error(f"[OllamaEmbedding] 向量化失败: {e}")
             raise
     
+    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+        """批量文本向量化（兼容Chroma接口）"""
+        return self.embed(texts)
+    
     def embed_single(self, text: str) -> List[float]:
         """单文本向量化"""
         return self._client.embed_query(text)

@@ -416,6 +416,10 @@ class VectorStoreService:
             if not documents:
                 return {"success": False, "message": f"无法读取文件 {file_name} 的内容"}
             
+            # 修复：将文档metadata中的source从临时路径改为原始文件名
+            for doc in documents:
+                doc.metadata["source"] = file_name
+            
             # 根据文件大小选择合适的分块器
             file_size = os.path.getsize(file_path)
             splitter = self._get_splitter_for_file(file_size)

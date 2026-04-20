@@ -186,6 +186,21 @@ async def get_user_api(user_id: str, db=Depends(get_db)):
         created_at=user.created_at
     )
 
+@app.get("/api/users/by-username/{username}", response_model=UserResponse)
+async def get_user_by_username_api(username: str, db=Depends(get_db)):
+    """根据用户名获取用户信息"""
+    user = await get_user_by_username(db, username)
+    if not user:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    return UserResponse(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        is_active=user.is_active,
+        created_at=user.created_at
+    )
+
 # 会话管理 API（支持多用户隔离）
 @app.post("/api/sessions", response_model=SessionResponse)
 async def create_session_api(request: SessionCreate, db=Depends(get_db)):
