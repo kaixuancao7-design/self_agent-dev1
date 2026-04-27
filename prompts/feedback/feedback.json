@@ -48,5 +48,25 @@
     "comment": "测试反馈",
     "issue_type": null,
     "created_at": "2026-04-27T18:41:23.521256"
+  },
+  {
+    "id": "26119968843855d85fd6b6f2c4fafbcf",
+    "prompt_version": "v1.0",
+    "query": "test",
+    "response": "test",
+    "rating": 5,
+    "comment": "",
+    "issue_type": null,
+    "created_at": "2026-04-27T18:44:57.358795"
+  },
+  {
+    "id": "32faa491a805e058508feeaaba89a1c5",
+    "prompt_version": "v1.0",
+    "query": "test",
+    "response": "test",
+    "rating": 5,
+    "comment": "",
+    "issue_type": null,
+    "created_at": "2026-04-27T18:47:23.079616"
   }
 ]

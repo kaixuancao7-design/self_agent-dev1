@@ -122,9 +122,9 @@ class DynamicPromptGenerator:
         return base_prompt
     
     def _replace_template_variables(self, prompt: str, context: Dict[str, Any]) -> str:
-        """替换提示词中的模板变量（调用统一函数）"""
-        from utils.prompt_loader import _replace_template_variables as replace_vars
-        return replace_vars(prompt, context)
+        """替换提示词中的模板变量（调用公共工具函数）"""
+        from utils.template_utils import replace_template_variables
+        return replace_template_variables(prompt, context)
 
 
 class PromptVersionManager:

@@ -4,21 +4,17 @@
 from utils.config_handler import prompts_cfg
 from utils.logger_handler import logger
 from utils.path_tool import get_abs_path
+from utils.template_utils import replace_template_variables
 
 def _replace_template_variables(content: str, context: dict) -> str:
     """
-    替换提示词中的模板变量
+    替换提示词中的模板变量（封装公共函数以保持向后兼容）
     
     :param content: 提示词内容
     :param context: 上下文变量字典
     :return: 替换后的内容
     """
-    if not context:
-        return content
-    for key, value in context.items():
-        content = content.replace(f"{{{{{key}}}}}", str(value))
-        content = content.replace(f"{{{key}}}", str(value))
-    return content
+    return replace_template_variables(content, context)
 
 def load_system_prompt(intent_type: str = None, context: dict = None) -> str:
     """
