@@ -1,0 +1,42 @@
+[
+  {
+    "id": "8d25664d8877325ff2064fac95dcd517",
+    "prompt_version": "v2.0",
+    "query": "什么是机器学习?",
+    "response": "机器学习是AI的一个分支...",
+    "rating": 5,
+    "comment": "回答很详细",
+    "issue_type": null,
+    "created_at": "2026-04-27T16:28:29.102291"
+  },
+  {
+    "id": "03719e40d258da04d1581ebc13fdfff5",
+    "prompt_version": "v2.0",
+    "query": "解释量子计算",
+    "response": "量子计算基于量子力学...",
+    "rating": 4,
+    "comment": "基本清楚",
+    "issue_type": null,
+    "created_at": "2026-04-27T16:28:29.102291"
+  },
+  {
+    "id": "5ba0447e78d034fe800b0a28f4f3ba37",
+    "prompt_version": "v2.0",
+    "query": "如何学习Python?",
+    "response": "可以从基础语法开始...",
+    "rating": 3,
+    "comment": "",
+    "issue_type": "too_short",
+    "created_at": "2026-04-27T16:28:29.103301"
+  },
+  {
+    "id": "711cab520d5aef9b9dff40dac11c31d8",
+    "prompt_version": "v2.0",
+    "query": "介绍深度学习",
+    "response": "深度学习使用神经网络...",
+    "rating": 2,
+    "comment": "回答不准确",
+    "issue_type": "fact_error",
+    "created_at": "2026-04-27T16:28:29.104811"
+  }
+]
