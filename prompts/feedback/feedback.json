@@ -38,5 +38,15 @@
     "comment": "回答不准确",
     "issue_type": "fact_error",
     "created_at": "2026-04-27T16:28:29.104811"
+  },
+  {
+    "id": "7c81b7dcf2e0aa71d98c08705e014222",
+    "prompt_version": "v1.0",
+    "query": "测试问题",
+    "response": "测试回答",
+    "rating": 5,
+    "comment": "测试反馈",
+    "issue_type": null,
+    "created_at": "2026-04-27T18:41:23.521256"
   }
 ]

@@ -30,11 +30,18 @@ class DynamicPromptGenerator:
         """加载基础提示词模板"""
         prompt_dir = get_abs_path(prompts_cfg.get("prompt_dir", "prompts"))
         prompts = {}
+        if not os.path.exists(prompt_dir):
+            logger.warning(f"提示词目录不存在: {prompt_dir}")
+            return prompts
+        
         for filename in os.listdir(prompt_dir):
             if filename.endswith(".txt"):
                 name = filename[:-4]
-                with open(os.path.join(prompt_dir, filename), 'r', encoding='utf-8') as f:
-                    prompts[name] = f.read()
+                try:
+                    with open(os.path.join(prompt_dir, filename), 'r', encoding='utf-8') as f:
+                        prompts[name] = f.read()
+                except Exception as e:
+                    logger.error(f"加载提示词文件{filename}失败: {e}")
         return prompts
     
     def _get_knowledge_query_rules(self) -> str:
@@ -115,11 +122,9 @@ class DynamicPromptGenerator:
         return base_prompt
     
     def _replace_template_variables(self, prompt: str, context: Dict[str, Any]) -> str:
-        """替换提示词中的模板变量"""
-        for key, value in context.items():
-            prompt = prompt.replace(f"{{{{{key}}}}}", str(value))
-            prompt = prompt.replace(f"{{{key}}}", str(value))
-        return prompt
+        """替换提示词中的模板变量（调用统一函数）"""
+        from utils.prompt_loader import _replace_template_variables as replace_vars
+        return replace_vars(prompt, context)
 
 
 class PromptVersionManager:
@@ -292,7 +297,26 @@ class FeedbackCollector:
         :param rating: 评分（1-5分）
         :param comment: 用户评论
         :param issue_type: 问题类型（hallucination/irrelevant/too_long/too_short等）
+        :raises ValueError: 当参数验证失败时
         """
+        # 验证必填字段
+        if not prompt_version:
+            raise ValueError("prompt_version不能为空")
+        if not query:
+            raise ValueError("query不能为空")
+        if not response:
+            raise ValueError("response不能为空")
+        
+        # 验证评分范围
+        if not isinstance(rating, int) or not (1 <= rating <= 5):
+            raise ValueError("评分必须在1-5之间")
+        
+        # 验证issue_type（如果提供）
+        valid_issue_types = [None, "hallucination", "irrelevant", "too_long", 
+                            "too_short", "fact_error"]
+        if issue_type not in valid_issue_types:
+            raise ValueError(f"无效的issue_type: {issue_type}，有效值: {valid_issue_types}")
+        
         feedback = {
             "id": hashlib.md5(f"{query}{response}{datetime.now()}".encode()).hexdigest(),
             "prompt_version": prompt_version,
