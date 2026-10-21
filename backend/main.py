@@ -18,7 +18,8 @@ FastAPI 后端服务 - 异步版本
 import os
 import tempfile
 from typing import List, Dict, Any, Optional, Generator
-from fastapi import FastAPI, HTTPException, UploadFile, File, Depends
+from fastapi import FastAPI, HTTPException, UploadFile, File, Depends, Body
+from starlette.concurrency import iterate_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -347,6 +348,9 @@ async def chat_stream_api(request: ChatRequest, db=Depends(get_db)):
     session = await get_session(db, request.session_id)
     if not session:
         raise HTTPException(status_code=404, detail="会话不存在")
+
+    if request.user_id and session.user_id != request.user_id:
+        raise HTTPException(status_code=403, detail="无权访问该会话")
     
     # 获取会话缓存
     session_cache = get_session_cache(request.session_id)
@@ -375,12 +379,12 @@ async def chat_stream_api(request: ChatRequest, db=Depends(get_db)):
         full_response = ""
         
         if mode == "react":
-            for chunk in session_cache["agent"].execute_stream(request.message):
+            async for chunk in iterate_in_threadpool(session_cache["agent"].execute_stream(request.message)):
                 if chunk:
                     full_response += chunk
                     yield f"data: {json.dumps({'chunk': chunk, 'mode': mode})}\n\n"
         else:
-            for chunk in session_cache["agent"].run_stream(request.message):
+            async for chunk in iterate_in_threadpool(session_cache["agent"].run_stream(request.message)):
                 if chunk:
                     full_response += chunk
                     yield f"data: {json.dumps({'chunk': chunk, 'mode': mode})}\n\n"
@@ -402,7 +406,7 @@ async def list_databases_api():
     return VectorStoreService.list_databases()
 
 @app.post("/api/databases", response_model=DatabaseResponse)
-async def create_database_api(db_name: str):
+async def create_database_api(db_name: str = Body(..., embed=True)):
     """创建新数据库"""
     result = vector_store.create_database(db_name)
     return DatabaseResponse(
@@ -425,7 +429,8 @@ async def delete_database_api(db_name: str):
         new_db = [db for db in db_list if db != db_name][0]
         vector_store.switch_database(new_db)
     
-    result = vector_store.delete_database(db_name)
+    target_store = VectorStoreService(db_name=db_name)
+    result = target_store.delete_database()
     return DatabaseResponse(
         success=result["success"],
         message=result["message"]
@@ -488,7 +493,7 @@ async def upload_file_async_api(file: UploadFile = File(...), user_id: Optional[
     
     # 提交 Celery 任务
     celery_task = process_large_file.apply_async(
-        args=(temp_file_path, file.filename),
+        args=(temp_file_path, file.filename, {"db_name": vector_store.current_db}),
         task_id=task.id
     )
     

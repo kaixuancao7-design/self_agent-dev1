@@ -20,18 +20,19 @@ LangGraph 工作流架构
 import json
 import os
 import time
+from uuid import uuid4
 from typing import List, Dict, Any, Optional, TypedDict
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_core.tools import BaseTool
-from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
+from langchain_core.messages import HumanMessage, AIMessage, ToolMessage, BaseMessage, messages_to_dict, messages_from_dict
 from utils.logger_handler import logger
 from model.factory import chat_model
 from rag.ragas_evaluator import evaluate_rag_pipeline
 
 # 尝试导入数据库相关模块
 try:
-    from database.models import WorkflowState, SessionLocal
+    from backend.database import AsyncSessionLocal, WorkflowState
     from sqlalchemy import func
     DATABASE_AVAILABLE = True
 except ImportError:
@@ -56,7 +57,7 @@ class AgentState(TypedDict):
         retry_count: 当前重试次数
         last_error: 最后一次错误信息
     """
-    messages: List[Dict[str, Any]]
+    messages: List[BaseMessage]
     current_task: Optional[str] = None
     task_list: List[Dict[str, Any]] = []
     tool_results: List[Dict[str, Any]] = []
@@ -84,7 +85,10 @@ class LangGraphAgent:
         :param retry_delay: 重试延迟（秒）
         :param persist_dir: 状态持久化目录（本地文件模式）
         """
-        self.tools = tools or []
+        if tools is None:
+            from agent.skills import skill_loader
+            tools = skill_loader.get_tool_list(include_fallback=False)
+        self.tools = tools
         self.max_steps = max_steps
         self.max_retries = max_retries
         self.retry_delay = retry_delay
@@ -174,17 +178,19 @@ class LangGraphAgent:
         if not messages:
             return state
         
-        last_message = messages[-1]
+        last_message = next((m for m in reversed(messages) if isinstance(m, HumanMessage)), None)
+        if last_message is None:
+            return state
         
         # 分析用户意图
-        intent = self._analyze_intent(last_message.get("content", ""))
+        intent = self._analyze_intent(last_message.content)
         
         # 判断是否需要调用工具
-        need_tool = self._need_tool_call(last_message.get("content", ""), intent)
+        need_tool = self._need_tool_call(last_message.content, intent)
         
         if need_tool:
             # 生成工具调用
-            tool_call = self._generate_tool_call(last_message.get("content", ""), intent)
+            tool_call = self._generate_tool_call(last_message.content, intent)
             if tool_call:
                 new_message = AIMessage(
                     content="",
@@ -241,17 +247,17 @@ class LangGraphAgent:
             "knowledge_query": "rag_summarize",
             "task_request": "task_decompose",
             "web_search": "web_search",
-            "report": "get_user_history"
+            "report": "rag_summarize"
         }
         
         tool_name = intent_tool_map.get(intent)
         
-        if tool_name:
+        if tool_name and any(getattr(t, "name", None) == tool_name for t in self.tools):
             return {
                 "name": tool_name,
-                "parameters": {
-                    "query": content if intent in ["knowledge_query", "web_search"] else content
-                }
+                "args": {"goal" if tool_name == "task_decompose" else "query": content},
+                "id": str(uuid4()),
+                "type": "tool_call",
             }
         return None
     
@@ -294,7 +300,7 @@ class LangGraphAgent:
             if not messages:
                 return state
             
-            last_message = messages[-1]
+            last_message = next((m for m in reversed(messages) if isinstance(m, AIMessage) and m.tool_calls), None)
             
             # 查找工具调用
             tool_call = None
@@ -305,7 +311,7 @@ class LangGraphAgent:
                 return state
             
             tool_name = tool_call.get('name')
-            tool_params = tool_call.get('parameters', {})
+            tool_params = tool_call.get('args', {})
             
             # 查找工具
             tool = None
@@ -324,7 +330,8 @@ class LangGraphAgent:
             # 添加工具结果消息
             tool_result_msg = ToolMessage(
                 content=str(result),
-                tool_call_id=tool_call.get('id', '1')
+                tool_call_id=tool_call['id'],
+                name=tool_name,
             )
             messages.append(tool_result_msg)
             
@@ -337,13 +344,7 @@ class LangGraphAgent:
             state["retry_count"] = state.get("retry_count", 0) + 1
             state["last_error"] = str(e)
             
-            # 添加错误消息
-            error_msg = {
-                "role": "tool",
-                "content": f"工具调用失败: {str(e)}",
-                "name": tool_name if 'tool_name' in locals() else "unknown"
-            }
-            messages.append(error_msg)
+            # 保留最后一条 AI 工具请求，让重试执行同一组参数。
         
         state["messages"] = messages
         return state
@@ -398,7 +399,7 @@ class LangGraphAgent:
             return state
         
         # 获取工具结果
-        tool_results = [m for m in messages if isinstance(m, ToolMessage) or m.get("role") == "tool"]
+        tool_results = [m for m in messages if isinstance(m, ToolMessage)]
         
         if tool_results:
             last_result = tool_results[-1]
@@ -415,7 +416,7 @@ class LangGraphAgent:
                 state["evaluation_score"] = 0.3
                 
             # 保存工具结果
-            state["tool_results"].append({
+            state.setdefault("tool_results", []).append({
                 "content": content,
                 "name": last_result.name if hasattr(last_result, 'name') else "unknown"
             })
@@ -431,7 +432,7 @@ class LangGraphAgent:
         """
         # 检查步数限制
         if state.get("step_count", 0) >= self.max_steps:
-            return "end"
+            return "summarize"
         
         score = state.get("evaluation_score", 0.0)
         
@@ -517,10 +518,7 @@ class LangGraphAgent:
         else:
             final_answer = self._direct_answer(user_query)
         
-        messages.append({
-            "role": "assistant",
-            "content": final_answer
-        })
+        messages.append(AIMessage(content=final_answer))
         
         state["messages"] = messages
         state["final_answer"] = final_answer
@@ -588,14 +586,15 @@ class LangGraphAgent:
     async def _save_state_to_db(self, session_id: str, state: AgentState):
         """保存状态到数据库"""
         try:
-            async with SessionLocal() as session:
-                state_json = json.dumps(state, ensure_ascii=False)
+            async with AsyncSessionLocal() as session:
+                state_json = json.dumps(self._serialize_state(state), ensure_ascii=False)
                 
                 # 查找现有记录
                 existing = await session.get(WorkflowState, session_id)
                 
                 if existing:
                     existing.state = state_json
+                    existing.is_finished = state.get("is_finished", False)
                     existing.updated_at = func.now()
                 else:
                     new_state = WorkflowState(
@@ -615,10 +614,10 @@ class LangGraphAgent:
     async def _load_state_from_db(self, session_id: str) -> Optional[AgentState]:
         """从数据库加载状态"""
         try:
-            async with SessionLocal() as session:
+            async with AsyncSessionLocal() as session:
                 record = await session.get(WorkflowState, session_id)
                 if record:
-                    return json.loads(record.state)
+                    return self._deserialize_state(json.loads(record.state))
             return None
         except Exception as e:
             logger.error(f"[LangGraphAgent] 从数据库加载状态失败: {e}")
@@ -629,7 +628,7 @@ class LangGraphAgent:
         try:
             file_path = os.path.join(self.persist_dir, f"{session_id}.json")
             with open(file_path, 'w', encoding='utf-8') as f:
-                json.dump(state, f, ensure_ascii=False, indent=2)
+                json.dump(self._serialize_state(state), f, ensure_ascii=False, indent=2)
             logger.info(f"[LangGraphAgent] 状态已保存到文件: {file_path}")
         except Exception as e:
             logger.error(f"[LangGraphAgent] 保存状态到文件失败: {e}")
@@ -640,12 +639,20 @@ class LangGraphAgent:
             file_path = os.path.join(self.persist_dir, f"{session_id}.json")
             if os.path.exists(file_path):
                 with open(file_path, 'r', encoding='utf-8') as f:
-                    return json.load(f)
+                    return self._deserialize_state(json.load(f))
             return None
         except Exception as e:
             logger.error(f"[LangGraphAgent] 从文件加载状态失败: {e}")
             return None
     
+    @staticmethod
+    def _serialize_state(state):
+        return {**state, "messages": messages_to_dict(state.get("messages", []))}
+
+    @staticmethod
+    def _deserialize_state(state):
+        return {**state, "messages": messages_from_dict(state.get("messages", []))}
+
     def run(self, user_input: str, session_id: str = None) -> Dict[str, Any]:
         """
         运行工作流（非流式）
@@ -669,7 +676,9 @@ class LangGraphAgent:
         )
         
         try:
-            result = self.workflow.invoke(initial_state)
+            result = self.workflow.invoke(initial_state, config={
+                "recursion_limit": self.max_steps * (2 * self.max_retries + 4) + 2
+            })
             
             # 保存最终状态
             if session_id:
@@ -728,7 +737,9 @@ class LangGraphAgent:
                 retry_count=0
             )
             
-            result = self.workflow.invoke(initial_state)
+            result = self.workflow.invoke(initial_state, config={
+                "recursion_limit": self.max_steps * (2 * self.max_retries + 4) + 2
+            })
             tool_results = result.get("tool_results", [])
             last_error = result.get("last_error")
             

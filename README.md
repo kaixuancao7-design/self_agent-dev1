@@ -182,23 +182,25 @@ python scripts/run_ragas_evaluation.py
 | | `/api/sessions/{session_id}` | GET | 获取会话信息 |
 | | `/api/sessions/{session_id}` | DELETE | 删除会话 |
 | **知识库** | `/api/databases` | GET | 获取数据库列表 |
-| | `/api/databases/{db_name}` | POST | 创建数据库 |
+| | `/api/databases` | POST | 创建数据库，JSON 请求体：`{"db_name": "my_kb"}` |
 | | `/api/databases/{db_name}` | DELETE | 删除数据库 |
 | | `/api/databases/current` | GET | 获取当前数据库信息 |
-| **文件上传** | `/api/upload` | POST | 上传文件到知识库 |
-| | `/api/upload/celery` | POST | 通过Celery异步上传 |
+| **文件上传** | `/api/files/upload` | POST | 上传文件到知识库 |
+| | `/api/files/upload/async` | POST | 通过 Celery 异步上传，保留提交时选中的知识库 |
 | **聊天** | `/api/chat` | POST | Agent问答接口 |
 
 ### 🔐 多用户会话隔离
 
-系统支持多用户会话隔离，确保数据安全性：
+系统提供用户与会话关联管理，ReactAgent 的记忆按实例独立；完整身份认证、授权及知识库按用户隔离仍待完善。
 
 | 特性 | 描述 |
 |------|------|
 | **用户表** | 存储用户信息（ID、用户名、邮箱） |
 | **会话表** | 存储会话信息（ID、用户ID、会话名称、创建时间） |
-| **数据隔离** | 每个用户的会话独立，数据不串流 |
-| **状态持久化** | 支持本地文件和数据库两种持久化方式 |
+| **会话与记忆** | 会话缓存按会话 ID 管理，ReactAgent 使用独立记忆实例 |
+| **状态持久化** | LangGraph 支持本地文件和数据库保存、加载，消息对象可序列化 |
+
+聊天接口中的 `user_id` 检查为可选检查，且该值由客户端传入，不能替代身份认证。当前知识库选择仍使用共享状态。
 
 ### ⚡ 异步架构
 
@@ -206,10 +208,10 @@ python scripts/run_ragas_evaluation.py
 
 | 特性 | 描述 |
 |------|------|
-| **异步数据库操作** | 使用 asyncpg/sqlalchemy async 进行异步数据库操作 |
-| **异步LLM调用** | 支持异步调用LLM接口 |
+| **异步数据库操作** | 使用 SQLite、aiosqlite 和 SQLAlchemy async |
+| **模型调用** | 聊天接口通过执行器或线程池包装同步 Agent 调用；另提供 aiohttp 异步封装 |
 | **Celery任务队列** | 处理长任务（如大文件解析、Ragas评估） |
-| **并发支持** | 支持10人以内并发，无明显卡顿 |
+| **并发验证** | 尚未完成并发压测，同会话并发控制仍待完善 |
 
 ## 🏗️ 项目结构
 
@@ -233,7 +235,11 @@ python scripts/run_ragas_evaluation.py
 ├── chromadb/                # Chroma 向量数据库
 ├── data/                    # 数据文件
 ├── utils/                   # 工具函数
-├── test/                    # 测试文件
+├── test/                    # 本地历史测试脚本（被 Git 忽略）
+├── tests/                   # 核心链路回归测试
+├── requirements.txt         # 运行依赖
+├── requirements-dev.txt     # 开发与测试依赖
+├── DEVELOPMENT.md           # 开发、验证与当前限制
 └── app.py                   # Streamlit 应用入口
 ```
 
@@ -723,6 +729,8 @@ cd self_agent-dev1
 pip install -r requirements.txt
 ```
 
+开发与测试环境使用 `python -m pip install -r requirements-dev.txt`。依赖清单主要记录当前开发环境的直接依赖版本，并非完整锁文件，尚未验证全新环境安装。可选功能依赖与详细说明见 [开发与验证](DEVELOPMENT.md)。
+
 3. **启动 Ollama**
 ```bash
 ollama run qwen3.5:9b
@@ -749,6 +757,8 @@ python -m uvicorn backend.main:app --host 0.0.0.0 --port 8000
 ```bash
 celery -A backend.tasks worker --loglevel=info
 ```
+
+异步上传需要 Redis 服务；API 与 worker 必须能够访问同一临时文件路径，当前实现适合同机运行。
 
 ## ⚙️ 配置说明
 
@@ -851,6 +861,37 @@ curl -X POST http://localhost:8000/api/chat \
 | `fact_check.txt` | 事实核查提示词 |
 
 ## 📋 更新日志
+
+### 未发布 (2026-10-21)
+
+**核心链路修复：**
+- 统一 LangGraph 工作流中的消息对象，修复将 `HumanMessage` 当作字典读取的问题。
+- 默认加载可用技能，并保留显式传入空工具列表的行为；工具调用使用标准 `args`、`id` 格式，任务拆解使用 `goal` 参数，报告类请求通过知识库检索收集资料。
+- 修复工具失败后重试丢失原调用的问题；重试保留工具名和参数，耗尽后返回失败说明。
+- 步数达到上限时进入总结，并按最大步数与重试次数设置图递归上限，避免在生成答案前提前终止。
+- 修复工作流消息的 JSON 序列化与反序列化，支持文件和数据库状态保存、加载，并同步更新数据库中的完成标记。
+- 修复 Celery 文件任务导入错误，使用实际存在的 `VectorStoreService`，并传入提交时选中的知识库；修复业务失败被任务查询显示为完成的问题。
+- 更新后台分块任务的 `langchain_text_splitters` 导入路径。
+- 修复 Streamlit API 模式的用户与会话初始化：先创建用户，再创建会话，读取响应中的 `id`，初始化失败时显示错误并停止当前页面执行。
+- 统一创建知识库接口为 JSON 请求体，修复删除知识库时调用存储服务的方法签名错误。
+- 流式聊天通过线程池迭代同步 Agent 生成器，并补齐与非流式接口一致的可选用户归属检查。
+- ReactAgent 使用独立记忆实例，避免不同实例共享同一份会话记忆。
+
+**开发与文档：**
+- 新增 `requirements.txt`、`requirements-dev.txt` 和 `DEVELOPMENT.md`，补充运行、测试、可选依赖及已知限制说明。
+- 新增 `tests/test_core_regressions.py`，并忽略 pytest 缓存与本地测试临时目录。
+- 更新 README 的 API 路径、会话管理、异步实现及并发验证说明。
+
+**验证结果与范围：**
+- 11 项回归测试通过，覆盖真实 LangGraph 工具执行、失败重试、重试耗尽、步数与递归上限、消息状态文件往返、接口处理函数及 OpenAPI 请求定义、Celery 上传参数传递。
+- 本轮修改的 Python 文件语法检查通过，代码差异格式检查通过；现有 FastAPI `on_event` 弃用提示仍保留。
+- 模型、数据库及外部服务在回归测试中被替换；尚未完成真实 Ollama、Redis、完整 HTTP 联调和全新环境依赖安装验证。
+- 完整认证授权、知识库按用户隔离、同会话并发控制和聊天消息持久化仍待完善。
+
+回归测试命令：
+```bash
+python -m pytest tests/test_core_regressions.py -q
+```
 
 ### v1.5.0 (2026-04-20)
 

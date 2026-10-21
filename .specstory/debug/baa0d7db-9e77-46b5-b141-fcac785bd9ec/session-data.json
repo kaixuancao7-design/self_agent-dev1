@@ -1,0 +1,93 @@
+{
+  "schemaVersion": "1.0",
+  "provider": {
+    "id": "copilotide",
+    "name": "VS Code Copilot IDE",
+    "version": "1.0"
+  },
+  "sessionId": "baa0d7db-9e77-46b5-b141-fcac785bd9ec",
+  "createdAt": "2026-04-09T18:26:56+08:00",
+  "updatedAt": "1970-01-01T08:00:00+08:00",
+  "slug": "构建智能代理的优先级步骤",
+  "workspaceRoot": "d:\\vcodeproject\\self_agent-dev1",
+  "exchanges": [
+    {
+      "exchangeId": "request_42c1f008-de9a-4035-a979-45ef9ac25f64",
+      "startTime": "2026-04-09T19:09:02+08:00",
+      "messages": [
+        {
+          "timestamp": "2026-04-09T19:09:02+08:00",
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "🔥 第一优先级：立刻做（最核心、最容易、提升最大）\r\n1. 核心循环（The Loop）\r\n这是 Claude Code 最灵魂的地方，也是你项目从 “聊天机器人” 变成 “工程执行系统” 的唯一关键。\r\n你只需要加一个 while True 主循环：\r\nplaintext\r\n观察状态 → 思考 → 调用工具 → 拿到结果 → 反思 → 继续/结束\r\n效果：\r\n你的 Agent 会自动排错、自动重试、自动多步执行、自动推进任务\r\n不再是一问一答，而是能独立完成复杂任务\r\n为什么第一个做？\r\n代码改动最小\r\n效果最明显\r\n简历里能直接写：自主闭环推理引擎、自我修正机制、多步任务执行\r\n🧩 第二优先级：接着做（让架构更像工业级）\r\n2. 解耦 Runtime：Session + Harness + Sandbox\r\n不用全做，先做两件事：\r\n会话日志持久化（Session）\r\n所有思考、工具调用、结果全部存 JSON\r\n→ 崩溃可恢复、可复盘、可回溯\r\n工具执行隔离（Sandbox）\r\n所有代码 / 命令跑在隔离环境\r\n→ 安全、工业级、简历加分\r\n这一步让你的项目从 “玩具”→“可落地系统”\r\n🤖 第三优先级：锦上添花（高级能力）\r\n3. 多智能体（主 Agent + 子 Agent）\r\n主 Agent：规划、调度\r\n子 Agent：编码、搜索、测试、审查\r\n适合你写进简历：多智能体协同架构、任务分发、上下文隔离\r\n4. 技能动态加载（Skills System）\r\n不用每次都塞全部 Prompt需要什么技能加载什么\r\n简历亮点：动态 Prompt 工程、Token 优化、意图识别\r\n🛡️ 第四优先级：安全与权限（工业级必备）\r\n5. 零信任安全 + 人工确认\r\n高危操作必须用户同意工具调用前做参数校验\r\n简历亮点：防御性执行、安全沙箱、人机回环\r\n📚 第五优先级：记忆体系（高级特性）\r\n6. 长期记忆 + 项目规则（CLAUDE.md）\r\n让 Agent 记住项目规范、架构、习惯\r\n简历亮点：长期记忆管理、上下文压缩、项目级知识沉淀\r\n"
+            }
+          ]
+        },
+        {
+          "role": "agent",
+          "model": "copilot/auto",
+          "content": [
+            {
+              "type": "text",
+              "text": "**Investigating core loop implementation**\n\nI need to implement the requested core loop, probably in code. First, I'll inspect the current repository and create a to-do list to keep track of what needs to be done. It looks like I’ll need to modify files related to the agent, so I should read the relevant files. I think searching for terms like \"agent\" and \"main loop\" using grep or a file search tool will be helpful. Let's get started!"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "exchangeId": "request_3e04f62e-a67f-465f-9f73-d7379bd43b9b",
+      "startTime": "2026-04-09T19:17:47+08:00",
+      "messages": [
+        {
+          "timestamp": "2026-04-09T19:17:47+08:00",
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "实现支持云端大模型与本地 Ollama 模型无缝切换，通过配置化管理、日志系统、异常捕获与重试机制提升系统稳定性，降低部署与使用成本。"
+            }
+          ]
+        },
+        {
+          "role": "agent",
+          "model": "copilot/auto",
+          "content": [
+            {
+              "type": "text",
+              "text": "**Evaluating model integration**\n\nI need to implement support for a cloud"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "exchangeId": "request_0c869708-c13a-47a8-950f-c4b80f1311ee",
+      "startTime": "2026-04-09T19:25:25+08:00",
+      "messages": [
+        {
+          "timestamp": "2026-04-09T19:25:25+08:00",
+          "role": "user",
+          "content": [
+            {
+              "type": "text",
+              "text": "rag.yml 与agent.yml中模型参数类型重合，修改"
+            }
+          ]
+        },
+        {
+          "role": "agent",
+          "model": "copilot/auto",
+          "content": [
+            {
+              "type": "text",
+              "text": "**Inspecting config files**\n\nI'm focusing on addressing the duplication in the configuration files. First, I need to look closely at both files to understand their contents. It seems like I’ll use some tools to read through them"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

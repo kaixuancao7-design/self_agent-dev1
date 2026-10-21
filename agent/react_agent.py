@@ -27,7 +27,7 @@ from agent.tools import (
 # Skills 框架已包含的工具：rag_summarize, web_search, get_weather, task_decompose, fact_check, kb_management
 from agent.modules import (
     task_decomposer, path_planner, self_evaluator, fact_checker, dynamic_adjuster,
-    memory_manager, intent_recognizer
+    intent_recognizer
 )
 from model.factory import chat_model
 from utils.config_handler import agent_cfg
@@ -103,7 +103,8 @@ class ReactAgent:
         self.dynamic_adjuster = dynamic_adjuster
         
         # 记忆管理模块
-        self.memory_manager = memory_manager
+        from agent.modules.memory_manager import MemoryManager
+        self.memory_manager = MemoryManager()
         
         # 意图识别模块
         self.intent_recognizer = intent_recognizer

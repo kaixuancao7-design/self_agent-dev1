@@ -49,12 +49,12 @@ def process_large_file(self, file_path: str, file_name: str, vector_store_config
         self.update_state(state='PROGRESS', meta={'progress': 10, 'message': '开始处理文件'})
         
         # 导入向量存储
-        from rag.vector_store import ChromaVectorStore
+        from rag.vector_store import VectorStoreService
         
         self.update_state(state='PROGRESS', meta={'progress': 20, 'message': '加载向量存储'})
         
         # 创建向量存储实例
-        vector_store = ChromaVectorStore()
+        vector_store = VectorStoreService(db_name=(vector_store_config or {}).get('db_name'))
         
         self.update_state(state='PROGRESS', meta={'progress': 30, 'message': '解析文件内容'})
         
@@ -190,7 +190,7 @@ def document_chunking(self, document_text: str, chunk_size: int = 512, chunk_ove
     try:
         self.update_state(state='PROGRESS', meta={'progress': 10, 'message': '开始分块'})
         
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
+        from langchain_text_splitters import RecursiveCharacterTextSplitter
         
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
@@ -267,7 +267,7 @@ def get_task_status(task_id: str) -> dict:
     elif result.state == 'SUCCESS':
         return {
             'task_id': task_id,
-            'status': 'completed',
+            'status': 'failed' if result.info.get('status') == 'failed' else 'completed',
             'progress': 100,
             'message': result.info.get('message', '完成'),
             'data': result.info.get('data')

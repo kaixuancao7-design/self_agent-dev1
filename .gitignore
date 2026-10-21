@@ -46,6 +46,8 @@ config/.env
 
 # Testing
 test/
+.pytest_tmp/
+.pytest_cache/
 
 # Additional
 read_me.md

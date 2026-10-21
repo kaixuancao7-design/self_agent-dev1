@@ -83,6 +83,20 @@ class Task(Base):
         return f"<Task(id={self.id}, type={self.task_type}, status={self.status})>"
 
 
+class WorkflowState(Base):
+    """工作流状态表（用于 LangGraph 状态持久化）"""
+    __tablename__ = "workflow_states"
+    
+    session_id = Column(String(36), primary_key=True)
+    state = Column(Text)  # JSON 格式的状态数据
+    is_finished = Column(Boolean, default=False)
+    created_at = Column(DateTime, default=datetime.now)
+    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    
+    def __repr__(self):
+        return f"<WorkflowState(session_id={self.session_id}, is_finished={self.is_finished})>"
+
+
 # 初始化数据库
 async def init_db():
     """异步初始化数据库"""

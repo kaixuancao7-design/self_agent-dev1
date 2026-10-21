@@ -1,6 +1,7 @@
 import time
 import json
 import requests
+from uuid import uuid4
 
 from agent.react_agent import ReactAgent
 from agent.langgraph_workflow import LangGraphAgent
@@ -166,11 +167,17 @@ def show_chat_page():
     # 初始化会话（API模式下）
     if run_mode == "🌐 API 模式":
         if "api_session_id" not in st.session_state:
-            result = api_call("/sessions", "POST", {"user_id": "streamlit_user"})
-            if result.get("success", True):
-                st.session_state["api_session_id"] = result.get("session_id", "")
-            else:
-                st.session_state["api_session_id"] = "test_session"
+            if "api_user_id" not in st.session_state:
+                user = api_call("/users", "POST", {"username": f"streamlit_{uuid4().hex}"})
+                if not user.get("id"):
+                    st.error(user.get("error", "创建用户失败"))
+                    st.stop()
+                st.session_state["api_user_id"] = user["id"]
+            result = api_call("/sessions", "POST", {"user_id": st.session_state["api_user_id"]})
+            if not result.get("id"):
+                st.error(result.get("error", "创建会话失败"))
+                st.stop()
+            st.session_state["api_session_id"] = result["id"]
         
         st.sidebar.info(f"会话 ID: {st.session_state['api_session_id']}")
 
